@@ -1,0 +1,877 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>바이브코딩으로 수업 도구 만들기 · 조천초 교원 연수</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<style>
+:root{
+  --ink:#14233A; --paper:#F7F5EF; --paper2:#ECE7DA; --card:#FFFDF8; --line:#D6D0C2;
+  --accent:#B84E1E; --accent-soft:#F6E3D6; --teal:#1F6F7F; --teal-soft:#DCEDEF; --warm:#F2B66D;
+  --muted:#4A5568; --ok:#1E7A46; --ok-soft:#DFF1E6; --bad:#B42318; --bad-soft:#FBE4E1;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{font-family:'Noto Sans KR',system-ui,-apple-system,'Apple SD Gothic Neo','Malgun Gothic',sans-serif;background:var(--paper);color:var(--ink);font-size:17px;line-height:1.6}
+a{color:var(--teal);font-weight:700;word-break:break-all}
+button{font:inherit;cursor:pointer}
+input,textarea,select{font:inherit;color:var(--ink)}
+
+/* 상단 바 */
+.top{position:sticky;top:0;z-index:20;background:var(--ink);color:var(--paper);display:flex;align-items:center;gap:16px;padding:10px 20px;flex-wrap:wrap}
+.top .brand{font-weight:900;letter-spacing:.5px}
+.top .meta{display:flex;gap:10px;align-items:center;margin-left:auto;flex-wrap:wrap;font-size:14px}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:3px 12px;border-radius:999px;background:#24385A;color:#E6ECF4;font-size:14px;white-space:nowrap}
+.chip.host{background:var(--accent);color:#fff}
+.chip.demo{background:var(--warm);color:var(--ink)}
+.progress{height:4px;background:#24385A;width:100%;position:absolute;left:0;bottom:0}
+.progress i{display:block;height:100%;background:var(--warm);transition:width .3s}
+
+/* 본문 */
+main{max-width:1080px;margin:0 auto;padding:28px 20px 140px}
+.sec{display:inline-block;font-size:14px;font-weight:700;color:var(--accent);letter-spacing:1px;margin-bottom:6px}
+h1{font-size:clamp(26px,3.4vw,38px);line-height:1.3;margin:0 0 18px;font-weight:900}
+h2{font-size:22px;margin:28px 0 12px}
+h3{font-size:18px;margin:0 0 6px}
+.lead{font-size:clamp(18px,2vw,22px);font-weight:500}
+.muted{color:var(--muted)}
+.small{font-size:14px}
+.card{background:var(--card);border:1.5px solid var(--line);border-radius:16px;padding:18px 20px}
+.card.dark{background:var(--ink);border-color:var(--ink);color:var(--paper)}
+.card.dark .muted{color:#C9D3DE}
+.grid{display:grid;gap:14px}
+.g2{grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+.g3{grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+.g4{grid-template-columns:repeat(auto-fit,minmax(180px,1fr))}
+.pill{display:inline-block;font-size:13px;font-weight:700;padding:2px 10px;border-radius:999px;background:var(--teal);color:#fff;margin-bottom:8px}
+.pill.o{background:var(--accent)} .pill.g{background:#5B6573}
+.steps{counter-reset:s;list-style:none;padding:0;margin:0;display:grid;gap:10px}
+.steps li{counter-increment:s;position:relative;padding-left:44px;min-height:32px}
+.steps li::before{content:counter(s);position:absolute;left:0;top:0;width:32px;height:32px;border-radius:50%;background:var(--accent);color:#fff;font-weight:900;display:flex;align-items:center;justify-content:center}
+.big-q{display:flex;gap:18px;align-items:center;flex-wrap:wrap}
+.big-q .card{flex:1;min-width:240px;font-size:20px}
+.arrow{font-size:32px;color:var(--accent);font-weight:900}
+table{width:100%;border-collapse:collapse;background:var(--card);border-radius:12px;overflow:hidden;font-size:15px}
+th,td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+th{background:var(--paper2)}
+.tablewrap{overflow-x:auto}
+
+/* 프롬프트 상자 */
+.prompt{position:relative;background:var(--ink);color:#F7F5EF;border-radius:14px;padding:16px 20px 16px;margin:14px 0}
+.prompt .plabel{padding-right:70px;font-size:13px;font-weight:700;color:var(--warm);margin-bottom:4px}
+.prompt p{margin:0;white-space:pre-wrap}
+.copy{position:absolute;top:10px;right:10px;border:0;border-radius:8px;padding:4px 12px;background:var(--warm);color:var(--ink);font-weight:700;font-size:14px}
+
+/* 활동 */
+.activity{margin-top:26px;border-top:2px dashed var(--line);padding-top:20px}
+.activity-title{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.activity-title b{font-size:19px}
+.field{display:grid;gap:4px;margin-bottom:12px}
+.field label{font-weight:700;font-size:15px}
+.field input,.field textarea,.field select{width:100%;border:1.5px solid var(--line);border-radius:10px;padding:10px 12px;background:#fff}
+.field textarea{min-height:84px;resize:vertical}
+.field input:focus,.field textarea:focus{outline:3px solid var(--teal-soft);border-color:var(--teal)}
+.btn{border:0;border-radius:10px;padding:10px 20px;font-weight:700;background:var(--accent);color:#fff}
+.btn.sec{background:var(--paper2);color:var(--ink)}
+.btn.teal{background:var(--teal)}
+.btn:disabled{opacity:.5;cursor:default}
+.saved{color:var(--ok);font-weight:700;margin-left:10px}
+.results{margin-top:22px}
+.answers{display:grid;gap:10px;grid-template-columns:repeat(auto-fill,minmax(240px,1fr))}
+.ans{background:#fff;border:1.5px solid var(--line);border-radius:12px;padding:12px 14px;font-size:15px}
+.ans .who{font-size:13px;font-weight:700;color:var(--teal);margin-bottom:2px}
+.ans p{margin:0;white-space:pre-wrap;word-break:break-word}
+.count{font-size:14px;color:var(--muted);font-weight:500}
+
+/* 퀴즈 */
+.qitem{background:var(--card);border:1.5px solid var(--line);border-radius:14px;padding:16px 18px;margin-bottom:14px}
+.qitem .qtext{font-weight:700;font-size:18px;margin-bottom:10px}
+.opts{display:grid;gap:8px}
+.opt{position:relative;text-align:left;border:1.5px solid var(--line);background:#fff;border-radius:10px;padding:10px 14px;overflow:hidden}
+.opt .bar{position:absolute;left:0;top:0;bottom:0;background:var(--teal-soft);z-index:0;transition:width .4s}
+.opt span{position:relative;z-index:1}
+.opt .pct{float:right;font-weight:700;color:var(--muted)}
+.opt:disabled{color:var(--ink);opacity:1;cursor:default}
+.opt.mine{border-color:var(--teal);box-shadow:0 0 0 2px var(--teal) inset}
+.opt.correct{border-color:var(--ok);background:var(--ok-soft)}
+.opt.correct .bar{background:#BFE3CC}
+.opt.wrong{border-color:var(--bad);background:var(--bad-soft)}
+.exp{margin-top:10px;padding:10px 12px;border-radius:10px;background:var(--ok-soft);font-size:15px}
+.waiting{font-size:14px;color:var(--muted);margin-top:8px}
+
+/* 갤러리 */
+.gal{display:grid;gap:14px;grid-template-columns:repeat(auto-fill,minmax(300px,1fr))}
+.gcard{background:#fff;border:1.5px solid var(--line);border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:8px}
+.gcard .top2{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.gcard .owner{font-weight:900}
+.gcard details{font-size:14px;color:var(--muted)}
+.gcard details p{white-space:pre-wrap;margin:6px 0 0;color:var(--ink)}
+.like{border:1.5px solid var(--line);background:#fff;border-radius:999px;padding:3px 12px;font-weight:700}
+.like.on{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+.cmts{font-size:14px;display:grid;gap:4px;max-height:160px;overflow:auto}
+.cmts div{background:var(--paper);border-radius:8px;padding:4px 8px}
+.cmtform{display:flex;gap:6px}
+.cmtform input{flex:1;border:1.5px solid var(--line);border-radius:8px;padding:6px 10px;font-size:14px}
+.cmtform button{white-space:nowrap;border:0;border-radius:8px;background:var(--teal);color:#fff;padding:6px 12px;font-size:14px;font-weight:700}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.tab{border:1.5px solid var(--line);background:#fff;border-radius:999px;padding:4px 14px;font-weight:700;font-size:14px}
+.tab.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.stars{display:flex;gap:6px}
+.star{border:1.5px solid var(--line);background:#fff;border-radius:10px;padding:6px 14px;font-weight:700}
+.star.on{background:var(--warm);border-color:var(--warm)}
+
+/* 하단 바 */
+.bar{position:fixed;left:0;right:0;bottom:0;z-index:30;background:#fff;border-top:1.5px solid var(--line);padding:10px 16px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:center;box-shadow:0 -6px 20px rgba(20,35,58,.08)}
+.bar select{border:1.5px solid var(--line);border-radius:10px;padding:8px 10px;max-width:340px;background:#fff}
+.bar .stat{font-size:14px;color:var(--muted)}
+.notice{background:var(--accent-soft);border:1.5px solid var(--accent);border-radius:12px;padding:10px 14px;font-size:15px;margin-bottom:18px}
+
+/* 입장 화면 */
+.join{max-width:520px;margin:8vh auto;padding:0 20px}
+.join .card{padding:28px}
+.join h1{font-size:30px}
+
+/* 모달 */
+.modal{position:fixed;inset:0;background:rgba(20,35,58,.6);display:flex;align-items:center;justify-content:center;z-index:50;padding:20px}
+.modal .card{max-width:560px;width:100%;text-align:center}
+.modal img{width:240px;height:240px;margin:12px auto;display:block;background:#fff}
+.urlbox{font-size:20px;font-weight:900;word-break:break-all;background:var(--paper);border-radius:10px;padding:10px;margin:8px 0}
+
+@media (max-width:640px){
+  main{padding:20px 14px 170px}
+  .top{padding:8px 12px}
+  .bar select{max-width:100%;flex:1 1 100%}
+}
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+/* =========================================================
+   1) 설정 — 연수 전에 이 부분만 바꾸면 됩니다
+   ---------------------------------------------------------
+   - FIREBASE_CONFIG: Firebase 콘솔 > 프로젝트 설정 > 내 앱(웹)의 설정값
+     (Realtime Database를 만들고 databaseURL이 꼭 들어 있어야 합니다)
+   - 비워 두면 '데모 모드'로 동작합니다: 같은 브라우저의 탭끼리만 연결됩니다.
+   - 강사 화면 주소:   index.html?host=HOST_KEY값
+   - 참가자 주소:      index.html
+   - 다른 회차로 쓰려면 주소 뒤에 ?s=회차이름 을 붙이면 데이터가 분리됩니다.
+   ========================================================= */
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyAbOuvA3yLWAW9UlL8ABpeoCar-db4kuNQ",
+  authDomain: "vibecoding-teacher.firebaseapp.com",
+  databaseURL: "https://vibecoding-teacher-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "vibecoding-teacher",
+  storageBucket: "vibecoding-teacher.firebasestorage.app",
+  messagingSenderId: "988118122155",
+  appId: "1:988118122155:web:f383304c8bbe430fd2c1ee"
+};
+const HOST_KEY = "maggio2026";
+const DEFAULT_SESSION = "jocheon-1125";
+
+/* =========================================================
+   2) 데이터 연결 (Firebase 또는 데모용 로컬 저장)
+   ========================================================= */
+const params = new URLSearchParams(location.search);
+const SESSION = (params.get('s') || DEFAULT_SESSION).replace(/[^\w-]/g, '');
+const IS_HOST = params.get('host') === HOST_KEY;
+const ROOT = 'sessions/' + SESSION;
+
+function clone(v){ return v === undefined ? null : JSON.parse(JSON.stringify(v)); }
+
+function makeFirebaseDB(){
+  firebase.initializeApp(FIREBASE_CONFIG);
+  const db = firebase.database();
+  return {
+    mode: 'firebase',
+    on(path, cb){ const r = db.ref(path); const h = s => cb(s.val()); r.on('value', h); return () => r.off('value', h); },
+    set(path, v){ return db.ref(path).set(v); },
+    update(path, obj){ return db.ref(path).update(obj); },
+    push(path, v){ return db.ref(path).push(v); }
+  };
+}
+
+function makeLocalDB(){
+  const KEY = 'vibe-demo-db';
+  const read = () => { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e){ return {}; } };
+  let tree = read();
+  const subs = [];
+  const getAt = p => p.split('/').reduce((o,k) => (o == null ? undefined : o[k]), tree);
+  function setAt(p, v){
+    const ks = p.split('/'); let o = tree;
+    for (let i = 0; i < ks.length - 1; i++){
+      if (typeof o[ks[i]] !== 'object' || o[ks[i]] === null) o[ks[i]] = {};
+      o = o[ks[i]];
+    }
+    const last = ks[ks.length - 1];
+    if (v === null || v === undefined) delete o[last]; else o[last] = clone(v);
+  }
+  const persist = () => { try { localStorage.setItem(KEY, JSON.stringify(tree)); } catch(e){} };
+  const notify = () => subs.forEach(s => s.cb(clone(getAt(s.path))));
+  window.addEventListener('storage', e => { if (e.key === KEY){ tree = read(); notify(); } });
+  return {
+    mode: 'demo',
+    on(path, cb){ const s = {path, cb}; subs.push(s); cb(clone(getAt(path))); return () => subs.splice(subs.indexOf(s), 1); },
+    set(path, v){ setAt(path, v); persist(); notify(); return Promise.resolve(); },
+    update(path, obj){ Object.keys(obj).forEach(k => setAt(path + '/' + k, obj[k])); persist(); notify(); return Promise.resolve(); },
+    push(path, v){ return this.set(path + '/k' + Date.now().toString(36) + Math.random().toString(36).slice(2,6), v); }
+  };
+}
+
+const USE_FIREBASE = !!(FIREBASE_CONFIG.databaseURL && window.firebase);
+const DB = USE_FIREBASE ? makeFirebaseDB() : makeLocalDB();
+
+// 참가자 식별: 실제 운영에서는 브라우저에 저장, 데모에서는 탭마다 다른 사람으로
+function store(){ try { return DB.mode === 'demo' ? sessionStorage : localStorage; } catch(e){ return null; } }
+function sget(k){ try { return store().getItem(k); } catch(e){ return null; } }
+function sset(k, v){ try { store().setItem(k, v); } catch(e){} }
+const UID = IS_HOST ? 'host' : (sget('vibe-uid-' + SESSION) || (() => {
+  const id = 'u' + Date.now().toString(36) + Math.random().toString(36).slice(2,8);
+  sset('vibe-uid-' + SESSION, id); return id;
+})());
+let myName = IS_HOST ? '강사' : (sget('vibe-name-' + SESSION) || '');
+
+/* =========================================================
+   3) 화면 도우미
+   ========================================================= */
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const linkify = s => esc(s).replace(/https?:\/\/[^\s<]+/g, u => `<a href="${u}" target="_blank" rel="noopener noreferrer">${u}</a>`);
+const safeUrl = u => /^https?:\/\/\S+$/i.test(String(u || '').trim()) ? String(u).trim() : '';
+let promptSeq = 0;
+function promptBox(label, text){
+  const id = 'pr' + (promptSeq++);
+  return `<div class="prompt"><button class="copy" data-copy="${id}">복사</button><div class="plabel">${esc(label)}</div><p id="${id}">${esc(text)}</p></div>`;
+}
+const link = (url, text) => `<a href="${url}" target="_blank" rel="noopener noreferrer">${text}</a>`;
+
+/* =========================================================
+   4) 연수 단계 (슬라이드 흐름과 같은 순서)
+   ========================================================= */
+const PROMPT_COLOR = '초등학교 5학년 미술 ‘디지털 드로잉의 색 혼합’ 수업용 웹페이지를 만들어 줘. 빨강·초록·파랑 슬라이더를 움직이면 섞인 색이 큰 원에 바로 보이고, 그 색의 색상 코드(예: #FF8800)도 함께 표시해 줘. “하늘색을 만들어 보세요” 같은 색 만들기 미션 3개도 넣어 줘. 화면은 한국어로, 슬라이더와 버튼은 크게.';
+const PROMPT_COMPARE = '1부터 28까지 번호 중에서 발표자를 한 명 뽑아 주는 웹페이지를 만들어 줘. 버튼은 크게.';
+const PROMPT_DASH = '초등 교사용 ‘나만의 수업 대시보드’ 웹페이지를 만들어 줘. 한 화면에 ① 시작·정지되는 수업 타이머 ② 1~28번 중 발표자 뽑기 ③ 자주 쓰는 사이트 링크 버튼 6개(이름과 주소는 내가 쉽게 바꿀 수 있게) ④ 입력한 주소로 QR 코드 만들기를 카드 모양으로 배치해 줘. 글씨는 크게, 한국어로.';
+const PROMPT_CLUB = '구글 Apps Script로 ‘동아리 신청서’ 웹앱을 만들어 줘. 학년, 반, 번호, 이름, 1지망·2지망 동아리(목록에서 선택: 코딩, 드론, 독서, 축구, 미술), 신청 이유를 입력하면 이 스프레드시트의 ‘신청’ 시트에 제출 시각과 함께 한 줄씩 저장되게 해 줘. Code.gs와 index.html로 나눠 주고, 저장되면 ‘신청 완료’를 보여 줘. 붙여넣기와 배포 방법도 단계별로 알려 줘.';
+const PROMPT_KAHOOT = '5학년 과학 ‘태양계’ 객관식 10문항을 문제, 보기 4개, 정답 형식으로 정리해 줘.';
+
+const STEPS = [
+  { id:'welcome', sec:'열기', title:'환영합니다! 바이브코딩으로 수업 도구 만들기',
+    body:`<p class="lead">오늘 이 페이지는 <b>강사 화면과 함께 넘어갑니다.</b> 화면이 바뀌면 그 단계의 활동을 해 주세요.</p>
+    <div class="grid g3" style="margin-top:16px">
+      <div class="card"><span class="pill">이해</span><h3>바이브코딩이란?</h3><p class="muted small">정의, 등장 배경, 쓸까 만들까</p></div>
+      <div class="card"><span class="pill o">실습 3개</span><h3>직접 만들기</h3><p class="muted small">대시보드 · 동아리 신청서 · 고정 주소 배포</p></div>
+      <div class="card"><span class="pill g">나눔</span><h3>함께 보기</h3><p class="muted small">퀴즈, 아이디어, 결과물 갤러리</p></div>
+    </div>
+    <p class="muted small" style="margin-top:16px">준비물: 크롬 브라우저, 학교 구글 계정(로그인), GitHub 계정</p>` },
+
+  { id:'ice', sec:'열기 · 아이스브레이킹', title:'선생님의 경험을 들려주세요',
+    body:`<p class="muted">짧게 써도 괜찮아요. 없으면 “없음”이라고 적어 주세요.</p>`,
+    act:{ type:'survey', title:'경험 나누기', qs:[
+      {id:'made', label:'Q1. 직접 만들어 본 프로그램이나 웹앱이 있나요?', ph:'예: 구글 설문으로 만든 독서 기록장'},
+      {id:'tool', label:'Q2. 그때 사용한 도구는 무엇이었나요?', ph:'예: 구글 설문, 스크래치, ChatGPT, Gemini…'},
+      {id:'good', label:'Q3. 다른 선생님이 만든 것 중 좋았던 사례는? (링크도 좋아요)', ph:'예: 숏.한국 https://…'},
+      {id:'want', label:'Q4. 만들고 싶었던 수업 도구가 있었나요?', ph:'“이런 게 있으면 좋겠다” 싶었던 것'}
+    ]}},
+
+  { id:'goal', sec:'열기 · 오늘의 목표', title:'질문이 바뀌면 성공입니다',
+    body:`<div class="big-q">
+      <div class="card"><span class="pill g">지금까지</span><p style="margin:0">“○○ 할 수 있는 <b>도구가 있나요?</b>”</p></div>
+      <div class="arrow">→</div>
+      <div class="card dark"><span class="pill o">오늘부터</span><p style="margin:0">“○○ 할 수 있는 웹앱을 <b style="color:var(--warm)">어떻게 만들지?</b>”</p></div>
+    </div>` },
+
+  { id:'def', sec:'이해 1', title:'바이브코딩: 말로 설명하면, AI가 만든다',
+    body:`<p class="lead">코드를 한 줄씩 직접 쓰는 대신, 만들고 싶은 것을 <b>일상 언어로 설명</b>하고 AI가 만든 결과를 보며 <b>대화로 고쳐 나가는</b> 개발 방식</p>
+    <div class="grid g4" style="margin-top:14px">
+      <div class="card"><h3>① 설명한다</h3></div><div class="card"><h3>② AI가 만든다</h3></div>
+      <div class="card"><h3>③ 확인한다</h3><p class="muted small">교사에게 가장 중요한 단계</p></div><div class="card"><h3>④ 말로 고친다</h3></div>
+    </div>
+    <p class="muted small" style="margin-top:12px">2025년 2월 안드레이 카파시가 처음 이름 붙인 말 · 콜린스 사전 ‘2025 올해의 단어’</p>` },
+
+  { id:'history', sec:'이해 1', title:'ChatGPT는 2022년인데, 왜 붐은 2025년일까?',
+    body:`<div class="grid g4">
+      <div class="card"><span class="pill g">2022.11</span><h3>물어보면 답한다</h3><p class="muted small">코드 조각을 알려 줌. 실행·오류 해결은 사람 몫</p></div>
+      <div class="card"><span class="pill g">2023</span><h3>옆에서 거든다</h3><p class="muted small">개발 프로그램 속 자동완성. 여전히 개발자용</p></div>
+      <div class="card"><span class="pill">2024</span><h3>바로 보여 준다</h3><p class="muted small">만든 화면이 채팅 옆에서 즉시 실행</p></div>
+      <div class="card dark"><span class="pill o">2025</span><h3>스스로 만들고 고친다</h3><p class="muted small">AI 에이전트가 만들고, 실행하고, 오류까지 수정</p></div>
+    </div>
+    <h2>세 가지가 모두 갖춰져야 했다</h2>
+    <div class="grid g3">
+      <div class="card"><h3>① 코딩 실력</h3><p class="muted small">끝까지 작동하는 프로그램을 쓸 만큼 정확해짐</p></div>
+      <div class="card"><h3>② 바로 실행되는 화면</h3><p class="muted small">복사·저장 없이 결과를 즉시 확인</p></div>
+      <div class="card"><h3>③ 스스로 고치는 에이전트</h3><p class="muted small">사람은 ‘무엇을 원하는지’만 말하면 됨</p></div>
+    </div>` },
+
+  { id:'phet', sec:'이해 1 · 기존 사례 둘러보기', title:'PhET 시뮬레이션: 잘 만든 자료의 기준',
+    body:`<p>${link('https://phet.colorado.edu/ko/', 'phet.colorado.edu 열기 ↗')} &nbsp;<span class="muted small">콜로라도 대학교가 만든 무료 과학·수학 시뮬레이션</span></p>
+    <div class="grid g2" style="margin-top:10px">
+      <div class="card"><h3>좋은 점</h3><p class="muted small">검증된 내용, 직접 조작하며 탐구, 무료</p></div>
+      <div class="card"><h3>아쉬운 점</h3><p class="muted small">교육과정·차시와 딱 맞지 않을 때가 많고, 필요한 기능만 고르거나 바꿀 수 없음</p></div>
+    </div>`,
+    act:{ type:'survey', title:'둘러보고 한 줄', qs:[
+      {id:'miss', label:'우리 수업에 쓰기엔 무엇이 아쉬웠나요? 그 아쉬움을 프롬프트로 바꾼다면?', ph:'예: 우리 반 수준에 맞게 용어를 바꾸고, 미션을 넣고 싶다'}
+    ]}},
+
+  { id:'build', sec:'이해 1', title:'쓸까, 만들까?',
+    body:`<div class="grid g2">
+      <div class="card"><span class="pill g">교사용 AI 서비스 · 예: Brisk Teaching</span><h3>만들어진 도구를 바로 쓴다</h3>
+        <p class="small"><b>좋은 점</b> 설치 즉시 사용, 다듬어진 기능</p><p class="small"><b>한계</b> 정해진 기능 안에서만, 무료 범위 제한</p></div>
+      <div class="card dark"><span class="pill o">바이브코딩</span><h3>필요한 도구를 직접 만든다</h3>
+        <p class="small"><b>좋은 점</b> 무엇이든 맞춤, 여러 기능을 한 화면에</p><p class="small"><b>한계</b> 만드는 시간, 검증·유지 관리는 내 몫</p></div>
+    </div>
+    <p class="lead" style="margin-top:16px">기준은 간단합니다: <b style="color:var(--accent)">있는 건 쓰고, 없는 건 만든다</b></p>` },
+
+  { id:'kahoot', sec:'이해 1 · 강사 시연', title:'Gemini로 문항을 만들고, 카훗에서 퀴즈로',
+    body:`<ol class="steps">
+      <li><div><b>Gemini</b>로 문항 만들기 ${promptBox('시연 프롬프트', PROMPT_KAHOOT)}</div></li>
+      <li><div><b>검토 후 PDF로 저장</b> — 정답과 보기를 교사가 확인</div></li>
+      <li><div><b>카훗</b> AI 생성기에 PDF 업로드 → ‘문항 추출(Extract questions)’ → 저장</div></li>
+    </ol>
+    <p class="muted small" style="margin-top:12px">질문: 방금 한 활동은 바이브코딩일까요? → 다음 퀴즈에서 확인!</p>` },
+
+  { id:'aivibe', sec:'이해 1 · 퀴즈', title:'생성형 AI 활용일까, 바이브코딩일까?',
+    body:`<div class="card" style="background:var(--teal-soft);border-color:var(--teal-soft)"><b>구분 기준</b> 결과물이 <b>읽고 보는 자료</b>면 생성형 AI 활용, <b>누르고 입력하면 작동하는 프로그램</b>이면 바이브코딩</div>`,
+    act:{ type:'quiz', title:'골라 보세요', items:[
+      {id:'a', q:'카훗에 넣을 퀴즈 문항을 PDF로 만들어 달라고 했다', opts:['생성형 AI 활용','바이브코딩'], ans:0, exp:'얻은 결과물이 읽는 자료(PDF)입니다. AI가 내부에서 코드를 썼더라도 ‘작동하는 도구’를 만든 것은 아니에요.'},
+      {id:'b', q:'누르면 발표자를 뽑아 주는 웹페이지를 만들어 달라고 했다', opts:['생성형 AI 활용','바이브코딩'], ans:1, exp:'버튼을 누르면 작동하는 프로그램이므로 바이브코딩입니다.'},
+      {id:'c', q:'학부모 안내문 초안을 써 달라고 했다', opts:['생성형 AI 활용','바이브코딩'], ans:0, exp:'글(자료)을 생성했으므로 생성형 AI 활용입니다.'},
+      {id:'d', q:'신청서 내용을 시트에 자동 저장하는 웹앱을 만들어 달라고 했다', opts:['생성형 AI 활용','바이브코딩'], ans:1, exp:'입력하면 저장까지 작동하는 웹앱이므로 바이브코딩입니다.'}
+    ]}},
+
+  { id:'caution', sec:'이해 1', title:'만들기 전에 꼭 기억할 네 가지',
+    body:`<div class="grid g2">
+      <div class="card"><h3>내용 확인은 교사의 몫</h3><p class="muted small">AI는 그럴듯한 오류를 만듭니다. 공식·수치·용어는 직접 확인</p></div>
+      <div class="card"><h3>개인정보는 넣지 않기</h3><p class="muted small">학생 이름·연락처·성적 등 실제 정보는 프롬프트와 실습에 쓰지 않기</p></div>
+      <div class="card"><h3>공유 범위 확인</h3><p class="muted small">공유 링크는 주소를 아는 누구나 열 수 있음</p></div>
+      <div class="card"><h3>학생 사용은 정책 확인</h3><p class="muted small">연령 기준과 학교·교육청 지침 먼저 확인</p></div>
+    </div>` },
+
+  { id:'cases', sec:'실습 1 · 사례 살펴보기', title:'선생님들이 직접 만든 웹페이지',
+    body:`<div class="grid g2">
+      <div class="card"><span class="pill">교사용 도구 모음</span><h3>숏.한국</h3><p class="muted small">현직 교사(개발교사 박진환)가 만든 한글 URL 단축·공유 서비스. URL 단축·QR, 텍스트·파일·HTML 공유, 워드클라우드, 담벼락, 투표함, 링크 잠금…</p><p>${link('https://xn--0p4b.xn--3e0b707e/', '숏.한국 열기 ↗')}</p></div>
+      <div class="card"><span class="pill">업무 · Apps Script</span><h3>동의서 제출 페이지</h3><p class="muted small">교사가 만들어 공유한 페이지. 링크를 열어 입력·제출하면 끝 <b>(살펴보기만, 실제 정보 입력 금지)</b></p><p>${link('https://script.google.com/macros/s/AKfycbwPkXEt9zHIULLU7qeHvml8p_pBowq55oGGJnVcogxWhSMog1lsb81xvf7oQjiD759i/exec', '페이지 열기 ↗')}</p></div>
+      <div class="card"><span class="pill o">수업 · 시뮬레이션</span><h3>메카넘휠 조종 학교</h3><p class="muted small">바퀴 방향에 따라 로봇이 움직이는 원리를 조종하며 익히는 수업 도구</p><p>${link('https://claude.ai/artifact/1pAXeepPB8fWwMiHkhThZr', '열기 ↗')}</p></div>
+      <div class="card"><span class="pill o">체험 · 게임</span><h3>제주항일기념관 암호 탐험대</h3><p class="muted small">기념관을 탐험하며 암호를 푸는 방탈출형 활동</p><p>${link('https://jejuhangil-tech.github.io/EscapeRoom/', '열기 ↗')}</p></div>
+    </div>
+    <p class="lead" style="margin-top:16px">살펴보며 생각하기: 어떤 기능이 모여 있나요? 나에게만 필요한 기능은?</p>` },
+
+  { id:'formula', sec:'실습 1 · 프롬프트 공식', title:'네 가지만 넣으면 됩니다',
+    body:`<div class="grid g4">
+      <div class="card"><h3>누구에게</h3><p class="muted small">학년, 과목, 대상</p></div>
+      <div class="card"><h3>무엇을</h3><p class="muted small">주제와 학습 목표</p></div>
+      <div class="card"><h3>어떻게</h3><p class="muted small">조작 방법과 기능</p></div>
+      <div class="card"><h3>어떤 모습</h3><p class="muted small">언어, 크기, 색</p></div>
+    </div>
+    ${promptBox('예시 프롬프트 · 디지털 드로잉 색 혼합', PROMPT_COLOR)}
+    <p class="muted small">고칠 때는 한 번에 하나씩: “물감을 섞을 때와 비교해 볼 수 있는 버튼도 추가해 줘”</p>` },
+
+  { id:'ideas', sec:'실습 1 · 아이디어 나누기', title:'이 공식으로, 무엇을 만들어 보고 싶나요?',
+    body:`<p class="muted">네 칸을 채워 주세요. 모두의 아이디어가 아래에 카드로 모입니다.</p>`,
+    act:{ type:'ideas', title:'내 아이디어', qs:[
+      {id:'who', label:'누구에게', ph:'예: 4학년 과학'},
+      {id:'what', label:'무엇을', ph:'예: 그림자 길이와 태양 높이의 관계'},
+      {id:'how', label:'어떻게', ph:'예: 태양 위치를 끌면 그림자가 바뀜'},
+      {id:'look', label:'어떤 모습', ph:'예: 큰 버튼, 밝은 색, 한국어'}
+    ]}},
+
+  { id:'canvas', sec:'실습 1 · Canvas', title:'같은 프롬프트, Canvas 끄고 한 번 · 켜고 한 번',
+    body:`<div class="grid g2">
+      <div class="card"><span class="pill g">Canvas 끄고 요청하면</span><h3>채팅에 긴 HTML 코드</h3><p class="muted small">복사 → 메모장 → .html 저장 → 브라우저로 열기를 직접 해야 결과를 볼 수 있음</p></div>
+      <div class="card dark"><span class="pill o">Canvas 켜고 요청하면</span><h3>옆 창에서 바로 실행</h3><p class="muted small">바로 눌러 보고, 말로 고치면 즉시 반영. 코드 보기·공유 링크도 한곳에</p></div>
+    </div>
+    <p class="lead" style="margin-top:14px">켜는 곳: 입력창 왼쪽 <b>‘+’ → ‘도구 더보기’ → ‘Canvas’</b></p>
+    ${promptBox('비교용 짧은 프롬프트 (새 채팅 두 개에서 각각)', PROMPT_COMPARE)}`,
+    act:{ type:'survey', title:'비교해 보고 적기', qs:[
+      {id:'off', label:'Canvas를 끄고 요청했을 때 무엇이 나왔나요?', ph:'예: 채팅에 긴 코드만 나왔다'},
+      {id:'on', label:'Canvas를 켜고 요청했을 때 무엇이 달라졌나요?', ph:'예: 옆 창에서 바로 버튼을 눌러 볼 수 있었다'}
+    ]}},
+
+  { id:'p1', sec:'실습 1 · 나만의 대시보드', title:'예시 프롬프트에서 출발해, 내 것으로 바꾸기',
+    body:`<ol class="steps">
+      <li>gemini.google.com 접속 → ‘+’ → ‘도구 더보기’ → <b>Canvas</b> 켜기</li>
+      <li>아래 예시 프롬프트를 복사해 <b>한 군데 이상 바꾸기</b> (학년·인원, 기능, 디자인)</li>
+      <li>미리보기에서 확인 → 말로 2번 이상 고치기</li>
+      <li>‘공유’로 공개 링크 만들기 → 아래에 <b>바꾼 프롬프트와 링크</b> 제출</li>
+      <li>Gemini 대화 창은 닫지 않기 (실습 3에서 코드를 다시 씀)</li>
+    </ol>
+    ${promptBox('예시 프롬프트', PROMPT_DASH)}
+    <p class="muted small">더해 볼 기능: 오늘 시간표·할 일, 학급 공지 전광판, 모둠 뽑기, 색 혼합 같은 수업 시뮬레이션 카드</p>`,
+    act:{ type:'submit', title:'결과 제출', qs:[
+      {id:'prompt', label:'내가 바꾼 프롬프트', kind:'long', ph:'예시에서 바꾼 부분이 드러나게 전체를 붙여 넣어 주세요'},
+      {id:'url', label:'Canvas 공유 링크', kind:'url', ph:'https://g.co/gemini/share/…'},
+      {id:'desc', label:'한 줄 설명', kind:'text', ph:'예: 4학년 우리 반 아침 활동용 대시보드'}
+    ]}},
+
+  { id:'break', sec:'쉼 · 체크포인트 퀴즈', title:'잠깐 쉬면서 풀어 보세요',
+    act:{ type:'quiz', title:'체크포인트', items:[
+      {id:'a', q:'바이브코딩에서 사람이 주로 하는 일은?', opts:['코드 문법을 외워 직접 입력한다','원하는 것을 설명하고 결과를 확인·수정한다','AI가 만든 것을 확인 없이 그대로 쓴다'], ans:1, exp:'사람은 ‘무엇을 원하는지’ 설명하고, 결과를 확인하며 고쳐 나갑니다.'},
+      {id:'b', q:'Gemini에 웹페이지를 요청했더니 채팅에 긴 HTML 코드만 나왔다. 가장 가능성 높은 이유는?', opts:['인터넷 연결 오류','Canvas를 켜지 않았다','프롬프트가 너무 짧다'], ans:1, exp:'“코드가 나왔다 = Canvas를 안 켰다”를 확인 신호로 기억하세요.'},
+      {id:'c', q:'O/X: AI가 만든 시뮬레이션은 확인 없이 바로 수업에 써도 된다.', opts:['O','X'], ans:1, exp:'AI는 그럴듯한 오류를 만듭니다. 내용 확인은 교사의 몫이에요.'}
+    ]}},
+
+  { id:'save', sec:'이해 2', title:'‘데이터를 저장한다’는 것',
+    body:`<div class="grid g3">
+      <div class="card"><span class="pill g">저장 안 함</span><h3>칠판</h3><p class="muted small">새로고침하면 지워짐 · 예: 타이머, 시뮬레이션</p></div>
+      <div class="card"><span class="pill">내 브라우저에 저장</span><h3>내 공책</h3><p class="muted small">이 컴퓨터·이 브라우저에서 나만 · 예: 대시보드 메모</p></div>
+      <div class="card dark"><span class="pill o">클라우드에 저장</span><h3>학급 출석부</h3><p class="muted small">어느 기기에서든, 여럿이 함께 · 예: 신청서, 실시간 퀴즈</p></div>
+    </div>
+    <h2>저장이 안 되면 생기는 일</h2>
+    <div class="grid" style="gap:8px">
+      <div class="card">학생 28명이 퀴즈를 풀었는데, 누가 몇 점을 받았는지 선생님은 알 수 없다.</div>
+      <div class="card">동아리 신청서를 다 써 갔는데, 새로고침 한 번에 입력한 내용이 사라졌다.</div>
+      <div class="card">반 전체가 투표했지만, 결과가 각자 화면에만 남아 모아서 볼 수 없다.</div>
+      <div class="card">어제 교실 컴퓨터에서 적어 둔 메모가, 오늘 교무실 컴퓨터에서는 보이지 않는다.</div>
+      <div class="card">모둠별 미션이 어디까지 진행됐는지, 돌아다니며 직접 물어봐야 한다.</div>
+    </div>
+    <h2>그럼 Canvas 공유 링크로는?</h2>
+    <div class="grid g2">
+      <div class="card"><span class="pill">할 수 있는 것</span><p class="small" style="margin:0">학생이 링크를 열어 화면을 사용</p></div>
+      <div class="card dark"><span class="pill o">할 수 없는 것</span><p class="small" style="margin:0">학생이 입력한 내용을 선생님이 모아 보기 → 저장소(구글 시트·Firebase)가 필요</p></div>
+    </div>` },
+
+  { id:'tools', sec:'이해 2', title:'도구별 차이 한눈에',
+    body:`<h3>AI가 코드를 써 주는 곳 vs 코드가 실행되는 곳</h3>
+    <div class="tablewrap"><table>
+      <tr><th>도구</th><th>한마디로</th><th>만들 수 있는 것</th></tr>
+      <tr><td><b>Gemini Canvas</b></td><td>채팅 옆 미리보기 창</td><td>HTML 한 파일 (저장 없음)</td></tr>
+      <tr><td><b>Google AI Studio</b></td><td>말로 앱 전체를 만드는 작업실</td><td>저장·로그인 앱 (Firebase 버튼 연결)</td></tr>
+      <tr><td><b>Antigravity</b></td><td>PC에 설치하는 AI 개발 프로그램</td><td>여러 파일의 본격 프로젝트</td></tr>
+      <tr><td><b>Apps Script</b></td><td>구글 서비스를 움직이는 코드가 실행되는 곳</td><td>시트 저장 웹앱, 업무 자동화</td></tr>
+    </table></div>
+    <h3 style="margin-top:20px">올리는 곳 vs 저장하는 곳</h3>
+    <div class="tablewrap"><table>
+      <tr><th></th><th>GitHub Pages</th><th>Vercel</th><th>Apps Script</th><th>Firebase</th></tr>
+      <tr><td>역할</td><td>올리기</td><td>올리기 + 서버 기능(계산)</td><td>저장 + 실행</td><td>저장 + 로그인 + 올리기</td></tr>
+      <tr><td>데이터 저장</td><td>없음</td><td>없음 (외부 DB 연결)</td><td>구글 시트</td><td>실시간 DB</td></tr>
+      <tr><td>오늘</td><td>실습 3</td><td>개념만</td><td>실습 2</td><td>강사 시연</td></tr>
+    </table></div>
+    <p class="muted small">Firebase Studio(개발 화면)는 2027년 3월 종료 예정이지만, Firebase 서비스와 이미 배포된 앱은 그대로 작동합니다.</p>` },
+
+  { id:'choose', sec:'이해 2 · 퀴즈', title:'이 상황엔 어떤 도구?',
+    body:`<p class="muted">질문 1: 데이터를 저장해야 하나요? · 질문 2: 구글 시트에 쌓이면 충분한가요?</p>`,
+    act:{ type:'quiz', title:'상황별 도구 고르기', items:[
+      {id:'a', q:'수업 시간에 쓸 타이머·발표자 뽑기 화면', opts:['Canvas → GitHub Pages','Apps Script','Firebase'], ans:0, exp:'저장이 필요 없으니 Canvas로 만들고 GitHub Pages로 공개하면 충분합니다.'},
+      {id:'b', q:'학생들의 동아리 신청을 받아 시트로 모으기', opts:['Canvas → GitHub Pages','Apps Script','Firebase'], ans:1, exp:'저장이 필요하고, 구글 시트에 쌓이면 충분하니 Apps Script!'},
+      {id:'c', q:'반 전체가 동시에 참여하는 실시간 퀴즈와 점수판', opts:['Canvas → GitHub Pages','Apps Script','Firebase'], ans:2, exp:'실시간으로 여럿이 함께 쓰는 앱은 Firebase가 알맞아요. 이 연수 페이지도 Firebase로 만들었습니다.'}
+    ]}},
+
+  { id:'p2', sec:'실습 2 · 업무 자동화', title:'구글 시트에 저장되는 ‘동아리 신청서’ 웹앱',
+    body:`<p class="muted">학생이 신청하면 → 시트에 한 줄씩 자동 저장 → 교사는 시트에서 바로 정렬·집계 · <b>실습은 가상의 데이터로만</b></p>
+    <ol class="steps">
+      <li>새 구글 시트 만들기 (이름: 동아리신청)</li>
+      <li>메뉴 ‘확장 프로그램’ → ‘Apps Script’ 열기 <span class="muted small">(시트에서 열면 코드가 ‘이 시트’를 바로 찾아요)</span></li>
+      <li>Gemini에 아래 프롬프트 → <b>Code.gs</b>, <b>index.html</b> 코드 받기</li>
+      <li>코드 붙여넣기 (‘+’ → HTML로 index 파일 추가) → 저장</li>
+      <li>‘배포’ → ‘새 배포’ → 유형 ‘웹 앱’ → 권한 승인</li>
+      <li>웹앱 주소로 시험 신청 → 시트 확인 → 아래에 링크 제출</li>
+    </ol>
+    ${promptBox('예시 프롬프트', PROMPT_CLUB)}
+    <div class="tablewrap"><table>
+      <tr><th>이럴 때</th><th>이렇게</th></tr>
+      <tr><td>‘확인되지 않은 앱’ 경고</td><td>내가 만든 스크립트면 ‘고급’ → ‘(프로젝트 이름)로 이동’</td></tr>
+      <tr><td>고쳤는데 반영이 안 됨</td><td>‘배포 관리’에서 새 버전으로 다시 배포</td></tr>
+      <tr><td>오류 메시지가 뜸</td><td>메시지를 그대로 복사해 Gemini에 붙여넣기</td></tr>
+    </table></div>
+    <p class="muted small">Code.gs = Google Apps Script 파일(내용은 자바스크립트) · 빨리 끝났다면: “동아리별 현재 신청 인원을 보여 주고, 정원 20명이 차면 ‘마감’으로 표시해 줘”</p>`,
+    act:{ type:'submit', title:'웹앱 제출', qs:[
+      {id:'url', label:'배포한 웹앱 주소', kind:'url', ph:'https://script.google.com/macros/s/…/exec'},
+      {id:'desc', label:'추가하거나 바꾼 기능', kind:'text', ph:'예: 정원 마감 표시를 넣었어요'}
+    ]}},
+
+  { id:'p3', sec:'실습 3 · 배포', title:'내 대시보드에 ‘고정 주소’ 달기: GitHub Pages',
+    body:`<div class="grid g2">
+      <div class="card"><span class="pill g">Canvas 공유 링크</span><p class="small" style="margin:0">Gemini 대화에 딸린 긴 무작위 주소</p></div>
+      <div class="card dark"><span class="pill o">GitHub Pages 주소</span><p class="small" style="margin:0">아이디.github.io/my-dashboard — 내가 정한 이름, 고쳐도 그대로. QR로 교실에 붙여 두기 좋음</p></div>
+    </div>
+    <ol class="steps" style="margin-top:16px">
+      <li>github.com 로그인</li>
+      <li>‘New repository’ → 이름 <b>my-dashboard</b>, <b>Public</b> → Create</li>
+      <li>‘creating a new file’ → 파일 이름 <b>index.html</b> → Canvas의 ‘코드’ 보기에서 전체 복사해 붙여넣기 → Commit</li>
+      <li>Settings → Pages → Branch를 <b>main</b>으로 → Save</li>
+      <li>1~2분 뒤 <b>아이디.github.io/my-dashboard</b> 접속 확인 → 아래에 제출</li>
+    </ol>`,
+    act:{ type:'submit', title:'고정 주소 제출', qs:[
+      {id:'url', label:'GitHub Pages 주소', kind:'url', ph:'https://아이디.github.io/my-dashboard/'},
+      {id:'desc', label:'한 줄 소감', kind:'text', ph:'예: 주소가 생기니 진짜 내 앱 같아요'}
+    ]}},
+
+  { id:'firebase', sec:'실습 3 · 강사 시연', title:'Google AI Studio에서 Firebase 연결하기',
+    body:`<ol class="steps">
+      <li>aistudio.google.com → Build에서 새 앱 시작</li>
+      <li>“Firebase를 백엔드로 쓰는 학급 칭찬 게시판을 만들어 줘”처럼 저장이 필요한 기능 요청</li>
+      <li>뜨는 카드에서 <b>‘Enable Firebase’</b> 클릭 → 약관 동의</li>
+      <li>에이전트가 데이터베이스, 구글 로그인, 보안 규칙과 연결 코드를 자동으로 만듦</li>
+      <li>미리보기에서 글 올리기 → Firebase 콘솔에서 저장 확인</li>
+      <li>‘Publish’로 배포 → 여러 기기에서 동시에 접속</li>
+    </ol>
+    <div class="card" style="margin-top:16px"><b>오늘의 전체 그림</b><br>Gemini Canvas로 <b>만들고</b> → GitHub에 <b>보관하고</b> → GitHub Pages로 <b>공개하고</b> → 모아야 하면 Apps Script·Firebase로 <b>저장</b></div>` },
+
+  { id:'gallery', sec:'나눔', title:'결과물 갤러리',
+    body:`<p class="muted">동료의 결과물을 열어 보고 ❤와 한 줄 피드백을 남겨 주세요.</p>`,
+    act:{ type:'gallery', from:['p1','p2','p3'] }},
+
+  { id:'end', sec:'정리', title:'오늘 기억할 세 가지',
+    body:`<div class="grid" style="gap:8px">
+      <div class="card"><b>1</b> 찾던 자료는 이제 <b>말로 설명해서 만든다</b></div>
+      <div class="card"><b>2</b> 저장이 없으면 <b>Canvas → GitHub Pages</b>, 시트에 모으면 <b>Apps Script</b>, 실시간이면 <b>Firebase</b></div>
+      <div class="card"><b>3</b> AI가 만들고, <b>확인과 판단은 교사가</b> 한다</div>
+    </div>
+    <p class="lead" style="margin-top:16px">이제 질문해 보세요: “○○ 할 수 있는 웹앱을 <b style="color:var(--accent)">어떻게 만들지?</b>”</p>`,
+    act:{ type:'feedback', title:'소감 남기기' }}
+];
+const STEP_INDEX = Object.fromEntries(STEPS.map((s,i) => [s.id, i]));
+
+/* =========================================================
+   5) 상태와 렌더링
+   ========================================================= */
+let data = {};
+let viewStep = 0;
+let follow = true;
+let galleryFilter = 'all';
+let started = false;
+const app = document.getElementById('app');
+
+const hostStep = () => Math.min(Math.max(+((data.state || {}).step) || 0, 0), STEPS.length - 1);
+const people = () => data.people || {};
+const resp = id => (data.resp || {})[id] || {};
+const revealed = id => !!(((data.state || {}).reveal || {})[id]);
+
+function renderJoin(){
+  app.innerHTML = `
+  <div class="join"><div class="card">
+    <span class="sec">조천초 교원 연수 · 2026. 11. 25.</span>
+    <h1>바이브코딩으로<br>수업 도구 만들기</h1>
+    <p class="muted">이름(또는 별명)을 입력하고 입장하세요. 활동 결과에 이 이름이 표시됩니다.</p>
+    <form id="joinForm">
+      <div class="field"><label for="nm">이름</label><input id="nm" maxlength="20" required placeholder="예: 3학년 김선생" autocomplete="off"></div>
+      <button class="btn" type="submit">입장하기</button>
+    </form>
+    ${DB.mode === 'demo' ? '<p class="small muted" style="margin-top:14px">데모 모드: Firebase 설정 전이라 이 브라우저의 탭끼리만 연결됩니다.</p>' : ''}
+  </div></div>`;
+  document.getElementById('joinForm').onsubmit = e => {
+    e.preventDefault();
+    const v = document.getElementById('nm').value.trim().slice(0, 20);
+    if (!v) return;
+    myName = v; sset('vibe-name-' + SESSION, v);
+    DB.set(`${ROOT}/people/${UID}`, { name: v, t: Date.now() });
+    start();
+  };
+}
+
+function renderShell(){
+  app.innerHTML = `
+  <header class="top">
+    <span class="brand">바이브코딩 연수</span>
+    <span class="chip" id="stepChip"></span>
+    <div class="meta">
+      ${DB.mode === 'demo' ? '<span class="chip demo">데모 모드</span>' : ''}
+      ${IS_HOST ? '<span class="chip host">강사 화면</span>' : ''}
+      <span class="chip" id="peopleChip"></span>
+      <span class="chip">${esc(myName)}</span>
+    </div>
+    <div class="progress"><i id="prog"></i></div>
+  </header>
+  <main id="main"></main>
+  <div class="bar" id="bar"></div>
+  <div id="modalRoot"></div>`;
+}
+
+function start(){
+  started = true;
+  renderShell();
+  viewStep = hostStep();
+  renderStep();
+  renderBar();
+  updateHeader();
+}
+
+function updateHeader(){
+  const n = Object.keys(people()).length;
+  const pc = document.getElementById('peopleChip'); if (pc) pc.textContent = `참여 ${n}명`;
+  const sc = document.getElementById('stepChip'); if (sc) sc.textContent = `${viewStep + 1} / ${STEPS.length}`;
+  const pg = document.getElementById('prog'); if (pg) pg.style.width = ((hostStep() + 1) / STEPS.length * 100) + '%';
+}
+
+function onData(){
+  if (!started) return;
+  updateHeader();
+  if ((IS_HOST || follow) && viewStep !== hostStep()){
+    viewStep = hostStep(); renderStep();
+  } else {
+    renderResults();
+  }
+  renderBar();
+}
+
+function renderStep(){
+  const st = STEPS[viewStep];
+  promptSeq = 0;
+  const main = document.getElementById('main');
+  main.innerHTML = `
+    ${IS_HOST && DB.mode === 'demo' ? `<div class="notice">데모 모드입니다. 같은 브라우저에서 새 탭으로 <b>참가자 주소</b>를 열면 동기화를 시험할 수 있어요. 실제 연수 전에는 코드 맨 위 FIREBASE_CONFIG를 채워 주세요.</div>` : ''}
+    ${!IS_HOST && !follow ? `<div class="notice">지금은 지난 단계를 보고 있어요. <button class="btn teal" id="backLive" style="padding:4px 12px;margin-left:6px">강사 화면으로 돌아가기</button></div>` : ''}
+    <span class="sec">${esc(st.sec)}</span>
+    <h1>${esc(st.title)}</h1>
+    <div class="body">${st.body || ''}</div>
+    ${st.act ? `<section class="activity"><div class="activity-title"><span class="pill o">활동</span><b>${esc(st.act.title || '')}</b></div><div id="form"></div><div class="results" id="res"></div></section>` : ''}`;
+  main.querySelectorAll('[data-copy]').forEach(b => b.onclick = () => copyText(document.getElementById(b.dataset.copy).textContent, b));
+  const bl = document.getElementById('backLive'); if (bl) bl.onclick = () => { follow = true; viewStep = hostStep(); renderStep(); renderBar(); };
+  renderForm();
+  renderResults();
+  updateHeader();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function copyText(t, btn){
+  const done = () => { const o = btn.textContent; btn.textContent = '복사됨 ✓'; setTimeout(() => btn.textContent = o, 1500); };
+  if (navigator.clipboard && window.isSecureContext){ navigator.clipboard.writeText(t).then(done, () => fallback()); } else fallback();
+  function fallback(){
+    const ta = document.createElement('textarea'); ta.value = t; document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); done(); } catch(e){}
+    ta.remove();
+  }
+}
+
+/* ---------- 입력 폼 ---------- */
+function renderForm(){
+  const st = STEPS[viewStep]; const a = st.act; const box = document.getElementById('form');
+  if (!a || !box) return;
+  const mine = resp(st.id)[UID] || {};
+  if (['survey','ideas','submit'].includes(a.type)){
+    if (IS_HOST){ box.innerHTML = `<p class="muted small">참가자 화면에는 입력 칸이 보입니다. 응답이 아래에 실시간으로 모입니다.</p>`; return; }
+    box.innerHTML = `<form id="actForm">
+      ${a.qs.map(q => `<div class="field"><label for="f_${q.id}">${esc(q.label)}</label>${
+        q.kind === 'long' || (a.type === 'survey')
+          ? `<textarea id="f_${q.id}" placeholder="${esc(q.ph || '')}" maxlength="2000">${esc(mine[q.id] || '')}</textarea>`
+          : `<input id="f_${q.id}" type="${q.kind === 'url' ? 'url' : 'text'}" placeholder="${esc(q.ph || '')}" value="${esc(mine[q.id] || '')}" maxlength="500">`
+      }</div>`).join('')}
+      <button class="btn" type="submit">${mine.t ? '다시 보내기' : '보내기'}</button><span class="saved" id="savedMsg">${mine.t ? '보냄 ✓' : ''}</span>
+    </form>`;
+    document.getElementById('actForm').onsubmit = e => {
+      e.preventDefault();
+      const v = { name: myName, t: Date.now() };
+      let any = false;
+      a.qs.forEach(q => { const val = document.getElementById('f_' + q.id).value.trim(); v[q.id] = val; if (val) any = true; });
+      if (!any) return;
+      const urlQ = a.qs.find(q => q.kind === 'url');
+      if (urlQ && v[urlQ.id] && !safeUrl(v[urlQ.id])){ alertMsg('링크는 https:// 로 시작하는 주소를 붙여 넣어 주세요.'); return; }
+      DB.set(`${ROOT}/resp/${st.id}/${UID}`, v).then(() => {
+        const m = document.getElementById('savedMsg'); if (m) m.textContent = '보냄 ✓';
+        const b = e.target.querySelector('button'); if (b) b.textContent = '다시 보내기';
+      });
+    };
+  } else if (a.type === 'feedback'){
+    if (IS_HOST){ box.innerHTML = `<p class="muted small">참가자 화면에는 만족도와 소감 입력 칸이 보입니다.</p>`; return; }
+    let rating = mine.rating || 0;
+    box.innerHTML = `<form id="fbForm">
+      <div class="field"><label>오늘 연수는 어떠셨나요?</label><div class="stars" id="stars">${[1,2,3,4,5].map(n => `<button type="button" class="star${rating >= n ? ' on' : ''}" data-n="${n}">${n}</button>`).join('')}</div></div>
+      <div class="field"><label for="f_use">내 수업(업무)에서 가장 먼저 만들어 보고 싶은 것은?</label><textarea id="f_use" maxlength="1000">${esc(mine.use || '')}</textarea></div>
+      <div class="field"><label for="f_say">한 줄 소감</label><input id="f_say" maxlength="300" value="${esc(mine.say || '')}"></div>
+      <button class="btn" type="submit">${mine.t ? '다시 보내기' : '보내기'}</button><span class="saved" id="savedMsg">${mine.t ? '보냄 ✓' : ''}</span>
+    </form>`;
+    box.querySelectorAll('.star').forEach(b => b.onclick = () => {
+      rating = +b.dataset.n; box.querySelectorAll('.star').forEach(x => x.classList.toggle('on', +x.dataset.n <= rating));
+    });
+    document.getElementById('fbForm').onsubmit = e => {
+      e.preventDefault();
+      if (!rating){ alertMsg('만족도(1~5)를 골라 주세요.'); return; }
+      DB.set(`${ROOT}/resp/${st.id}/${UID}`, { name: myName, t: Date.now(), rating, use: document.getElementById('f_use').value.trim(), say: document.getElementById('f_say').value.trim() })
+        .then(() => { const m = document.getElementById('savedMsg'); if (m) m.textContent = '보냄 ✓'; });
+    };
+  } else {
+    box.innerHTML = '';
+  }
+}
+
+function alertMsg(t){
+  const r = document.getElementById('modalRoot');
+  r.innerHTML = `<div class="modal"><div class="card"><p class="lead">${esc(t)}</p><button class="btn" id="mOk">확인</button></div></div>`;
+  document.getElementById('mOk').onclick = () => r.innerHTML = '';
+}
+
+/* ---------- 결과 ---------- */
+function sortByTime(obj){ return Object.entries(obj).sort((a,b) => (b[1].t || 0) - (a[1].t || 0)); }
+
+function keepInputs(container, fn){
+  // 다시 그려도 입력 중이던 댓글이 지워지지 않게
+  const kept = {}; let focusId = null, selStart = null;
+  container.querySelectorAll('input[data-keep]').forEach(i => { kept[i.dataset.keep] = i.value; if (document.activeElement === i){ focusId = i.dataset.keep; selStart = i.selectionStart; } });
+  fn();
+  container.querySelectorAll('input[data-keep]').forEach(i => { if (kept[i.dataset.keep] !== undefined) i.value = kept[i.dataset.keep]; if (i.dataset.keep === focusId){ i.focus(); try { i.setSelectionRange(selStart, selStart); } catch(e){} } });
+}
+
+function renderResults(){
+  const st = STEPS[viewStep]; const a = st.act; const box = document.getElementById('res');
+  if (!a || !box) return;
+  const r = resp(st.id); const n = Object.keys(r).length;
+  if (a.type === 'survey'){
+    box.innerHTML = a.qs.map(q => {
+      const list = sortByTime(r).filter(([,v]) => v[q.id]);
+      return `<h2 style="font-size:18px">${esc(q.label)} <span class="count">${list.length}개</span></h2>
+        <div class="answers">${list.map(([,v]) => `<div class="ans"><div class="who">${esc(v.name)}</div><p>${linkify(v[q.id])}</p></div>`).join('') || '<p class="muted small">아직 응답이 없어요.</p>'}</div>`;
+    }).join('');
+  } else if (a.type === 'ideas'){
+    const list = sortByTime(r);
+    box.innerHTML = `<h2 style="font-size:18px">모두의 아이디어 <span class="count">${list.length}개</span></h2>
+      <div class="answers">${list.map(([,v]) => `<div class="ans"><div class="who">${esc(v.name)}</div>${a.qs.map(q => v[q.id] ? `<p><b>${esc(q.label)}</b> ${esc(v[q.id])}</p>` : '').join('')}</div>`).join('') || '<p class="muted small">첫 아이디어를 올려 주세요!</p>'}</div>`;
+  } else if (a.type === 'submit'){
+    keepInputs(box, () => {
+      box.innerHTML = `<h2 style="font-size:18px">제출된 결과물 <span class="count">${n}개</span></h2>` + galleryCards([st.id]);
+      wireGallery(box);
+    });
+  } else if (a.type === 'gallery'){
+    keepInputs(box, () => {
+      const labels = { p1: '실습 1 · 대시보드', p2: '실습 2 · 신청서', p3: '실습 3 · 고정 주소' };
+      const from = galleryFilter === 'all' ? a.from : [galleryFilter];
+      box.innerHTML = `<div class="tabs">${['all', ...a.from].map(k => `<button class="tab${galleryFilter === k ? ' on' : ''}" data-tab="${k}">${k === 'all' ? '전체' : labels[k]}</button>`).join('')}</div>` + galleryCards(from, labels);
+      box.querySelectorAll('[data-tab]').forEach(b => b.onclick = () => { galleryFilter = b.dataset.tab; renderResults(); });
+      wireGallery(box);
+    });
+  } else if (a.type === 'quiz'){
+    renderQuiz(st, box);
+  } else if (a.type === 'feedback'){
+    const list = sortByTime(r);
+    const avg = list.length ? (list.reduce((s,[,v]) => s + (+v.rating || 0), 0) / list.length).toFixed(1) : '-';
+    box.innerHTML = `${IS_HOST ? `<div class="card dark" style="margin-bottom:14px"><b>평균 만족도 ${avg} / 5</b> · 응답 ${list.length}명</div>` : ''}
+      <h2 style="font-size:18px">모두의 소감 <span class="count">${list.length}개</span></h2>
+      <div class="answers">${list.map(([,v]) => `<div class="ans"><div class="who">${esc(v.name)}</div>${v.say ? `<p>${esc(v.say)}</p>` : ''}${v.use ? `<p class="muted small" style="margin-top:6px">만들어 볼 것: ${esc(v.use)}</p>` : ''}</div>`).join('') || '<p class="muted small">아직 소감이 없어요.</p>'}</div>`;
+  }
+}
+
+function galleryCards(stepIds, labels){
+  const likes = data.likes || {}; const cmts = data.cmt || {};
+  const items = [];
+  stepIds.forEach(sid => Object.entries(resp(sid)).forEach(([uid, v]) => items.push({ sid, uid, v })));
+  items.sort((a,b) => (b.v.t || 0) - (a.v.t || 0));
+  if (!items.length) return '<p class="muted small">아직 제출된 결과물이 없어요.</p>';
+  return `<div class="gal">${items.map(({sid, uid, v}) => {
+    const key = sid + '__' + uid;
+    const lk = likes[key] || {}; const ln = Object.keys(lk).length; const on = !!lk[UID];
+    const cl = Object.values(cmts[key] || {}).sort((a,b) => (a.t || 0) - (b.t || 0));
+    const url = safeUrl(v.url);
+    return `<div class="gcard">
+      <div class="top2"><span class="owner">${esc(v.name)}</span>${labels ? `<span class="pill g" style="margin:0">${esc(labels[sid] || '')}</span>` : ''}</div>
+      ${v.desc ? `<div>${esc(v.desc)}</div>` : ''}
+      ${url ? `<a href="${esc(url)}" target="_blank" rel="noopener noreferrer">결과물 열기 ↗</a>` : ''}
+      ${v.prompt ? `<details><summary>프롬프트 보기</summary><p>${esc(v.prompt)}</p></details>` : ''}
+      <div><button class="like${on ? ' on' : ''}" data-like="${esc(key)}">❤ ${ln}</button></div>
+      ${cl.length ? `<div class="cmts">${cl.map(c => `<div><b>${esc(c.name)}</b> ${esc(c.text)}</div>`).join('')}</div>` : ''}
+      <form class="cmtform" data-cmt="${esc(key)}"><input data-keep="c_${esc(key)}" maxlength="200" placeholder="한 줄 피드백"><button type="submit">남기기</button></form>
+    </div>`;
+  }).join('')}</div>`;
+}
+
+function wireGallery(box){
+  box.querySelectorAll('[data-like]').forEach(b => b.onclick = () => {
+    const key = b.dataset.like; const on = !!(((data.likes || {})[key] || {})[UID]);
+    DB.set(`${ROOT}/likes/${key}/${UID}`, on ? null : true);
+  });
+  box.querySelectorAll('[data-cmt]').forEach(f => f.onsubmit = e => {
+    e.preventDefault();
+    const inp = f.querySelector('input'); const text = inp.value.trim(); if (!text) return;
+    inp.value = '';
+    DB.push(`${ROOT}/cmt/${f.dataset.cmt}`, { name: myName, text: text.slice(0, 200), t: Date.now() });
+  });
+}
+
+function renderQuiz(st, box){
+  const a = st.act; const r = resp(st.id); const mine = (r[UID] || {}).a || {}; const rev = revealed(st.id);
+  const showStats = IS_HOST || rev;
+  box.innerHTML = a.items.map((it, qi) => {
+    const counts = it.opts.map(() => 0); let total = 0;
+    Object.values(r).forEach(v => { const x = (v.a || {})[it.id]; if (x !== undefined && x !== null){ counts[x] = (counts[x] || 0) + 1; total++; } });
+    return `<div class="qitem">
+      <div class="qtext">${qi + 1}. ${esc(it.q)}</div>
+      <div class="opts">${it.opts.map((o, oi) => {
+        const pct = total ? Math.round(counts[oi] / total * 100) : 0;
+        const cls = ['opt'];
+        if (mine[it.id] === oi) cls.push('mine');
+        if (rev && oi === it.ans) cls.push('correct');
+        if (rev && mine[it.id] === oi && oi !== it.ans) cls.push('wrong');
+        return `<button class="${cls.join(' ')}" data-q="${it.id}" data-o="${oi}" ${IS_HOST || rev ? 'disabled' : ''}>
+          ${showStats ? `<i class="bar" style="width:${pct}%"></i>` : ''}<span>${esc(o)}${rev && oi === it.ans ? ' ✓' : ''}</span>${showStats ? `<span class="pct">${counts[oi]}명 · ${pct}%</span>` : ''}</button>`;
+      }).join('')}</div>
+      ${rev ? `<div class="exp">${esc(it.exp)}</div>` : (IS_HOST ? `<div class="waiting">응답 ${total}명</div>` : (mine[it.id] !== undefined ? '<div class="waiting">선택 완료 · 강사가 정답을 공개하면 결과가 보여요</div>' : ''))}
+    </div>`;
+  }).join('');
+  if (!IS_HOST && !rev){
+    box.querySelectorAll('[data-q]').forEach(b => b.onclick = () => {
+      DB.update(`${ROOT}/resp/${st.id}/${UID}`, { name: myName, t: Date.now(), ['a/' + b.dataset.q]: +b.dataset.o });
+    });
+  }
+}
+
+/* ---------- 하단 바 ---------- */
+function renderBar(){
+  const bar = document.getElementById('bar'); if (!bar) return;
+  const st = STEPS[viewStep]; const hs = hostStep();
+  if (IS_HOST){
+    const n = Object.keys(resp(st.id)).length;
+    const isQuiz = st.act && st.act.type === 'quiz';
+    bar.innerHTML = `
+      <button class="btn sec" id="hPrev" ${viewStep === 0 ? 'disabled' : ''}>◀ 이전</button>
+      <select id="hSel">${STEPS.map((s,i) => `<option value="${i}" ${i === viewStep ? 'selected' : ''}>${i + 1}. ${esc(s.sec)} · ${esc(s.title)}</option>`).join('')}</select>
+      <button class="btn" id="hNext" ${viewStep === STEPS.length - 1 ? 'disabled' : ''}>다음 ▶</button>
+      ${isQuiz ? `<button class="btn teal" id="hRev">${revealed(st.id) ? '정답 숨기기' : '정답 공개'}</button>` : ''}
+      ${st.act ? `<span class="stat">응답 ${n}명</span>` : ''}
+      <button class="btn sec" id="hJoin">참여 주소·QR</button>
+      ${st.act && st.act.type !== 'gallery' ? `<button class="btn sec" id="hClear" title="이 단계의 응답을 모두 지웁니다">응답 지우기</button>` : ''}`;
+    document.getElementById('hPrev').onclick = () => goHost(viewStep - 1);
+    document.getElementById('hNext').onclick = () => goHost(viewStep + 1);
+    document.getElementById('hSel').onchange = e => goHost(+e.target.value);
+    const rv = document.getElementById('hRev'); if (rv) rv.onclick = () => DB.set(`${ROOT}/state/reveal/${st.id}`, revealed(st.id) ? null : true);
+    document.getElementById('hJoin').onclick = showJoinModal;
+    const cl = document.getElementById('hClear'); if (cl) cl.onclick = () => {
+      if (confirm(`‘${st.title}’ 단계의 응답 ${n}개를 모두 지울까요? 되돌릴 수 없습니다.`)) DB.set(`${ROOT}/resp/${st.id}`, null);
+    };
+  } else {
+    bar.innerHTML = `
+      <button class="btn sec" id="pPrev" ${viewStep === 0 ? 'disabled' : ''}>◀ 지난 단계</button>
+      <span class="stat">${follow ? '강사 화면을 따라가는 중' : `지난 단계 보는 중 (강사는 ${hs + 1}단계)`}</span>
+      <button class="btn sec" id="pNext" ${viewStep >= hs ? 'disabled' : ''}>다음 ▶</button>
+      ${!follow ? '<button class="btn teal" id="pLive">강사 화면으로</button>' : ''}`;
+    document.getElementById('pPrev').onclick = () => { follow = false; viewStep = Math.max(0, viewStep - 1); renderStep(); renderBar(); };
+    document.getElementById('pNext').onclick = () => { viewStep = Math.min(hs, viewStep + 1); follow = viewStep === hs; renderStep(); renderBar(); };
+    const lv = document.getElementById('pLive'); if (lv) lv.onclick = () => { follow = true; viewStep = hs; renderStep(); renderBar(); };
+  }
+}
+
+function goHost(i){
+  if (i < 0 || i >= STEPS.length) return;
+  viewStep = i; renderStep(); renderBar();
+  DB.update(`${ROOT}/state`, { step: i, t: Date.now() });
+}
+
+function showJoinModal(){
+  let url = location.origin + location.pathname;
+  if (SESSION !== DEFAULT_SESSION) url += '?s=' + encodeURIComponent(SESSION);
+  const r = document.getElementById('modalRoot');
+  const qr = 'https://api.qrserver.com/v1/create-qr-code/?size=240x240&margin=8&data=' + encodeURIComponent(url);
+  r.innerHTML = `<div class="modal"><div class="card">
+    <h2 style="margin-top:0">참여 주소</h2>
+    <img src="${qr}" alt="참여 주소 QR 코드">
+    <div class="urlbox">${esc(url)}</div>
+    <p class="muted small">QR을 찍거나 주소를 입력해 입장합니다.</p>
+    <button class="btn" id="mClose">닫기</button>
+  </div></div>`;
+  document.getElementById('mClose').onclick = () => r.innerHTML = '';
+}
+
+/* =========================================================
+   6) 시작
+   ========================================================= */
+DB.on(ROOT, v => { data = v || {}; onData(); });
+if (IS_HOST || myName){
+  if (!IS_HOST) DB.update(`${ROOT}/people/${UID}`, { name: myName, t: Date.now() });
+  start();
+} else {
+  renderJoin();
+}
+</script>
+</body>
+</html>
