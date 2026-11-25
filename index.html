@@ -452,12 +452,13 @@ const STEPS = [
     </table></div>
     <p class="muted small">Firebase Studio(개발 화면)는 2027년 3월 종료 예정이지만, Firebase 서비스와 이미 배포된 앱은 그대로 작동합니다.</p>` },
 
-  { id:'choose', sec:'이해 2 · 퀴즈', title:'이 상황엔 어떤 도구?',
-    body:`<p class="muted">질문 1: 데이터를 저장해야 하나요? · 질문 2: 구글 시트에 쌓이면 충분한가요?</p>`,
-    act:{ type:'quiz', title:'상황별 도구 고르기', items:[
-      {id:'a', q:'수업 시간에 쓸 타이머·발표자 뽑기 화면', opts:['Canvas → GitHub Pages','Apps Script','Firebase'], ans:0, exp:'저장이 필요 없으니 Canvas로 만들고 GitHub Pages로 공개하면 충분합니다.'},
-      {id:'b', q:'학생들의 동아리 신청을 받아 시트로 모으기', opts:['Canvas → GitHub Pages','Apps Script','Firebase'], ans:1, exp:'저장이 필요하고, 구글 시트에 쌓이면 충분하니 Apps Script!'},
-      {id:'c', q:'반 전체가 동시에 참여하는 실시간 퀴즈와 점수판', opts:['Canvas → GitHub Pages','Apps Script','Firebase'], ans:2, exp:'실시간으로 여럿이 함께 쓰는 앱은 Firebase가 알맞아요. 이 연수 페이지도 Firebase로 만들었습니다.'}
+  { id:'choose', sec:'이해 2 · 퀴즈', title:'이 상황엔 어떤 방식?',
+    body:`<div class="card" style="background:var(--teal-soft);border-color:var(--teal-soft)">코드는 어느 길이든 <b>Gemini가 만들어 줍니다.</b> 고르는 것은 <b>어디에 올리고, 어디에 저장하느냐</b>입니다.</div>
+    <p class="muted" style="margin-top:10px">질문 1: 데이터를 저장해야 하나요? · 질문 2: 구글 시트에 쌓이면 충분한가요?</p>`,
+    act:{ type:'quiz', title:'상황별 방식 고르기', items:[
+      {id:'a', q:'수업 시간에 쓸 타이머·발표자 뽑기 화면', opts:['저장 없음 · Canvas로 만들어 GitHub Pages에 올리기','구글 시트에 저장 · Apps Script','실시간 저장 · GitHub Pages에 올리고 Firebase에 저장'], ans:0, exp:'저장이 필요 없으니 Canvas로 만들고 GitHub Pages에 올려 고정 주소만 만들면 충분합니다.'},
+      {id:'b', q:'학생들의 동아리 신청을 받아 시트로 모으기', opts:['저장 없음 · Canvas로 만들어 GitHub Pages에 올리기','구글 시트에 저장 · Apps Script','실시간 저장 · GitHub Pages에 올리고 Firebase에 저장'], ans:1, exp:'시트에 쌓이면 충분하니 Apps Script! Gemini가 써 준 코드를 붙여 넣고 배포하면 주소까지 만들어 줘서 GitHub가 필요 없어요.'},
+      {id:'c', q:'반 전체가 동시에 참여하는 실시간 퀴즈와 점수판', opts:['저장 없음 · Canvas로 만들어 GitHub Pages에 올리기','구글 시트에 저장 · Apps Script','실시간 저장 · GitHub Pages에 올리고 Firebase에 저장'], ans:2, exp:'Canvas로 만들고 GitHub Pages에 올리는 과정은 같고, 저장만 Firebase가 맡아요. 이 연수 페이지가 바로 이 구조입니다.'}
     ]}},
 
   { id:'p2', sec:'실습 2 · 업무 자동화', title:'구글 시트에 저장되는 ‘동아리 신청서’ 웹앱',
