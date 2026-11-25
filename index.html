@@ -379,15 +379,15 @@ const STEPS = [
       {id:'look', label:'어떤 모습', ph:'예: 큰 버튼, 밝은 색, 한국어'}
     ]}},
 
-  { id:'canvas', sec:'실습 1 · Canvas', title:'같은 프롬프트, Canvas 끄고 한 번 · 켜고 한 번',
+  { id:'canvas', sec:'실습 1 · Canvas', title:'같은 프롬프트, Canvas 없이 한 번 · 켜고 한 번',
     body:`<div class="grid g2">
-      <div class="card"><span class="pill g">Canvas 끄고 요청하면</span><h3>채팅에 긴 HTML 코드</h3><p class="muted small">복사 → 메모장 → .html 저장 → 브라우저로 열기를 직접 해야 결과를 볼 수 있음</p></div>
-      <div class="card dark"><span class="pill o">Canvas 켜고 요청하면</span><h3>옆 창에서 바로 실행</h3><p class="muted small">바로 눌러 보고, 말로 고치면 즉시 반영. 코드 보기·공유 링크도 한곳에</p></div>
+      <div class="card"><span class="pill g">Canvas 없이 요청하면</span><h3>Gemini가 알아서 판단</h3><p class="muted small">대부분 미리보기가 뜨지만, 기기에 따라(특히 태블릿) 코드만 나올 때가 있음</p></div>
+      <div class="card dark"><span class="pill o">Canvas 켜고 요청하면</span><h3>언제나 작업창에서 바로 실행</h3><p class="muted small">바로 눌러 보고, 말로 고치면 즉시 반영. 코드 보기·공유 링크도 한곳에</p></div>
     </div>
     <p class="lead" style="margin-top:14px">켜는 곳: 입력창 왼쪽 <b>‘+’ → ‘도구 더보기’ → ‘Canvas’</b></p>
     ${promptBox('비교용 짧은 프롬프트 (새 채팅 두 개에서 각각)', PROMPT_COMPARE)}`,
     act:{ type:'survey', title:'비교해 보고 적기', qs:[
-      {id:'off', label:'Canvas를 끄고 요청했을 때 무엇이 나왔나요?', ph:'예: 채팅에 긴 코드만 나왔다'},
+      {id:'off', label:'Canvas 없이 요청했을 때 무엇이 나왔나요? (사용한 기기도 적어 주세요)', ph:'예: PC에서는 미리보기가 떴다 / 태블릿에서는 코드만 나왔다'},
       {id:'on', label:'Canvas를 켜고 요청했을 때 무엇이 달라졌나요?', ph:'예: 옆 창에서 바로 버튼을 눌러 볼 수 있었다'}
     ]}},
 
@@ -410,7 +410,7 @@ const STEPS = [
   { id:'break', sec:'쉼 · 체크포인트 퀴즈', title:'잠깐 쉬면서 풀어 보세요',
     act:{ type:'quiz', title:'체크포인트', items:[
       {id:'a', q:'바이브코딩에서 사람이 주로 하는 일은?', opts:['코드 문법을 외워 직접 입력한다','원하는 것을 설명하고 결과를 확인·수정한다','AI가 만든 것을 확인 없이 그대로 쓴다'], ans:1, exp:'사람은 ‘무엇을 원하는지’ 설명하고, 결과를 확인하며 고쳐 나갑니다.'},
-      {id:'b', q:'Gemini에 웹페이지를 요청했더니 채팅에 긴 HTML 코드만 나왔다. 가장 가능성 높은 이유는?', opts:['인터넷 연결 오류','Canvas를 켜지 않았다','프롬프트가 너무 짧다'], ans:1, exp:'“코드가 나왔다 = Canvas를 안 켰다”를 확인 신호로 기억하세요.'},
+      {id:'b', q:'Gemini에 웹페이지를 요청했는데 미리보기 없이 코드만 나왔다. 어떻게 하면 좋을까?', opts:['인터넷을 다시 연결한다','Canvas를 켜고 다시 요청한다','프롬프트를 더 길게 쓴다'], ans:1, exp:'기기나 상황에 따라(특히 태블릿) 코드만 나올 때가 있어요. Canvas를 켜고 요청하면 언제나 작업창에서 바로 실행됩니다.'},
       {id:'c', q:'O/X: AI가 만든 시뮬레이션은 확인 없이 바로 수업에 써도 된다.', opts:['O','X'], ans:1, exp:'AI는 그럴듯한 오류를 만듭니다. 내용 확인은 교사의 몫이에요.'}
     ]}},
 
