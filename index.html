@@ -62,6 +62,7 @@ th{background:var(--paper2)}
 .tablewrap{overflow-x:auto}
 
 /* 프롬프트 상자 */
+.extra{margin-top:22px;padding:18px 20px;border:2px dashed var(--line);border-radius:16px;background:#fff}
 .prompt{position:relative;background:var(--ink);color:#F7F5EF;border-radius:14px;padding:16px 20px 16px;margin:14px 0}
 .prompt .plabel{padding-right:70px;font-size:13px;font-weight:700;color:var(--warm);margin-bottom:4px}
 .prompt p{margin:0;white-space:pre-wrap}
@@ -266,6 +267,29 @@ const PROMPT_COLOR = '초등학교 5학년 미술 ‘디지털 드로잉의 색 
 const PROMPT_COMPARE = '1부터 28까지 번호 중에서 발표자를 한 명 뽑아 주는 웹페이지를 만들어 줘. 버튼은 크게.';
 const PROMPT_DASH = '초등 교사용 ‘나만의 수업 대시보드’ 웹페이지를 만들어 줘. 한 화면에 ① 시작·정지되는 수업 타이머 ② 1~28번 중 발표자 뽑기 ③ 자주 쓰는 사이트 링크 버튼 6개(이름과 주소는 내가 쉽게 바꿀 수 있게) ④ 입력한 주소로 QR 코드 만들기를 카드 모양으로 배치해 줘. 글씨는 크게, 한국어로.';
 const PROMPT_CLUB = '구글 Apps Script로 ‘동아리 신청서’ 웹앱을 만들어 줘. 학년, 반, 번호, 이름, 1지망·2지망 동아리(목록에서 선택: 코딩, 드론, 독서, 축구, 미술), 신청 이유를 입력하면 이 스프레드시트의 ‘신청’ 시트에 제출 시각과 함께 한 줄씩 저장되게 해 줘. Code.gs와 index.html로 나눠 주고, 저장되면 ‘신청 완료’를 보여 줘. 붙여넣기와 배포 방법도 단계별로 알려 줘.';
+const PROMPT_LIVE = `초등학교 수업용 "슬라이드 + 실시간 퀴즈" 웹앱을 만들어 줘.
+
+[역할]
+- 교사 화면: 주소 끝에 ?teacher=1234 를 붙이면 교사 모드. 이전/다음 버튼으로 슬라이드를 넘긴다.
+- 학생 화면: 이름만 입력하고 입장(회원가입·구글 로그인 없이). 교사가 넘기면 학생 화면도 자동으로 같은 슬라이드로 바뀐다.
+
+[슬라이드]
+- 슬라이드는 코드 맨 위 목록에서 내가 쉽게 고칠 수 있게 해 줘. 종류는 두 가지:
+  1) 설명 슬라이드: 제목, 본문
+  2) 퀴즈 슬라이드: 질문, 보기 4개, 정답, 해설
+- 예시로 "물의 순환" 주제 설명 3장, 퀴즈 2장을 넣어 줘.
+
+[퀴즈]
+- 학생은 보기를 하나 고르면 제출되고, 다시 바꿀 수 있다.
+- 교사 화면에는 응답한 학생 수와 보기별 인원이 막대로 실시간 표시된다.
+- 교사가 "정답 공개"를 누르면 학생 화면에 정답, 해설, 응답 분포가 함께 나온다.
+
+[저장]
+- 현재 슬라이드 번호, 학생 이름, 퀴즈 응답을 Firebase(Firestore)에 저장해서 여러 기기에서 실시간으로 같이 보이게 해 줘.
+- 교사 화면에 "응답 초기화" 버튼.
+
+[화면]
+- 한국어, 큰 글씨, 태블릿에서도 잘 보이게. 교사 화면은 프로젝터용으로 크게.`;
 const PROMPT_FB = '학급 칭찬 게시판 웹앱을 만들어 줘. 이름과 칭찬 내용을 쓰면 카드로 쌓이고, 다른 기기에서도 바로 보이게 해 줘. 데이터는 Firebase(Firestore)에 저장해 줘. 화면은 한국어로.';
 const PROMPT_KAHOOT = '5학년 과학 ‘태양계’ 객관식 10문항을 문제, 보기 4개, 정답 형식으로 정리해 줘.';
 
@@ -529,7 +553,21 @@ const STEPS = [
       <div class="card"><h3>직접 설정할 때 (Firebase 콘솔)</h3><p class="muted small">프로젝트 만들기 → 웹앱 등록 → 설정값 복사 → 데이터베이스 만들기 → 보안 규칙 작성 → 코드에 붙이기 → GitHub에 올리기</p></div>
       <div class="card dark"><h3>AI Studio에서 할 때</h3><p class="muted small">저장 기능을 요청 → ‘Enable Firebase’ 클릭 → ‘Publish’ 클릭</p></div>
     </div>
-    <div class="card" style="margin-top:14px"><b>알아 둘 점</b> 무료 배포는 계정당 앱 2개까지 · Publish에서 결제 설정만 보이면 무료 대상이 아닌 계정(그래도 미리보기에서 저장까지는 확인 가능) · 로그인은 기본이 구글 로그인</div>`,
+    <div class="card" style="margin-top:14px"><b>알아 둘 점</b> 무료 배포는 계정당 앱 2개까지 · Publish에서 결제 설정만 보이면 무료 대상이 아닌 계정(그래도 미리보기에서 저장까지는 확인 가능) · 로그인은 기본이 구글 로그인</div>
+    <div class="extra">
+      <span class="pill o">추가 활동 · 빨리 끝낸 분께</span>
+      <h2 style="margin-top:6px">오늘 연수 페이지 같은 “슬라이드 + 실시간 퀴즈” 앱 만들기</h2>
+      <p class="muted">강사가 슬라이드를 넘기면 학생 화면도 넘어가고, 중간중간 퀴즈를 풀면 교사 화면에 응답 분포가 바로 모이는 앱입니다. 실습 3과 같은 방법(AI Studio + Firebase)으로 만듭니다.</p>
+      ${promptBox('추가 활동 프롬프트 · 슬라이드 + 실시간 퀴즈', PROMPT_LIVE)}
+      <ol class="steps">
+        <li><b>Build</b>에 위 프롬프트 붙여 넣기 → Firebase 카드가 뜨면 <b>‘Enable Firebase’</b></li>
+        <li>미리보기를 <b>새 탭으로 하나 더</b> 열기 → 한쪽은 주소 끝에 <b>?teacher=1234</b>, 다른 쪽은 학생으로 입장</li>
+        <li>교사 탭에서 ‘다음’ → 학생 탭도 넘어가는지, 퀴즈 응답이 교사 쪽 막대에 올라가는지 확인</li>
+        <li>채팅으로 내 수업에 맞게 바꾸기: “4학년 과학 ‘그림자와 태양’ 내용으로, 퀴즈는 3개로 바꿔 줘”, “학생 화면에 내 점수도 보여 줘”</li>
+        <li><b>‘Publish’</b>로 주소 받기 → 학생에게 QR로 안내</li>
+      </ol>
+      <div class="card" style="margin-top:12px"><b>알아 둘 점</b> 구글 로그인이 붙으면 “구글 로그인 없이 익명 로그인으로 바꿔 줘”라고 요청 · 1234는 다른 숫자로 바꾸고 수업 때는 전체화면으로(주소창 숨기기) · 학생 이름은 번호나 별명으로 · 설명 3장 + 퀴즈 2장처럼 작게 시작</div>
+    </div>`,
     act:{ type:'submit', title:'내 앱 제출', qs:[
       {id:'url', label:'Publish로 받은 주소', kind:'url', ph:'https://….ai.studio 또는 https://….run.app'},
       {id:'desc', label:'만든 앱 한 줄 설명 (배포를 못 했다면 어디까지 했는지)', kind:'text', ph:'예: 학급 칭찬 게시판, 새로고침해도 글이 남아요'}
