@@ -270,8 +270,8 @@ const STEPS = [
     <p class="muted small" style="margin-top:16px">준비물: 크롬 브라우저, 학교 구글 계정(로그인), GitHub 계정</p>` },
 
   { id:'ice', sec:'열기 · 아이스브레이킹', title:'선생님의 경험을 들려주세요',
-    body:`<p class="muted">짧게 써도 괜찮아요. 없으면 “없음”이라고 적어 주세요.</p>`,
-    act:{ type:'survey', title:'경험 나누기', qs:[
+    body:`<p class="muted">짧게 써도 괜찮아요. 없으면 “없음”이라고 적어 주세요.</p><p class="lead" style="margin-top:8px">🙈 이 활동은 <b>이름 없이</b> 공개됩니다. 누가 썼는지 강사도 알 수 없어요.</p>`,
+    act:{ type:'survey', title:'경험 나누기', anon:true, qs:[
       {id:'made', label:'Q1. 직접 만들어 본 프로그램이나 웹앱이 있나요?', ph:'예: 구글 설문으로 만든 독서 기록장'},
       {id:'tool', label:'Q2. 그때 사용한 도구는 무엇이었나요?', ph:'예: 구글 설문, 스크래치, ChatGPT, Gemini…'},
       {id:'good', label:'Q3. 다른 선생님이 만든 것 중 좋았던 사례는? (링크도 좋아요)', ph:'예: 숏.한국 https://…'},
@@ -654,7 +654,7 @@ function renderForm(){
     </form>`;
     document.getElementById('actForm').onsubmit = e => {
       e.preventDefault();
-      const v = { name: myName, t: Date.now() };
+      const v = a.anon ? { t: Date.now() } : { name: myName, t: Date.now() };
       let any = false;
       a.qs.forEach(q => { const val = document.getElementById('f_' + q.id).value.trim(); v[q.id] = val; if (val) any = true; });
       if (!any) return;
@@ -713,7 +713,7 @@ function renderResults(){
     box.innerHTML = a.qs.map(q => {
       const list = sortByTime(r).filter(([,v]) => v[q.id]);
       return `<h2 style="font-size:18px">${esc(q.label)} <span class="count">${list.length}개</span></h2>
-        <div class="answers">${list.map(([,v]) => `<div class="ans"><div class="who">${esc(v.name)}</div><p>${linkify(v[q.id])}</p></div>`).join('') || '<p class="muted small">아직 응답이 없어요.</p>'}</div>`;
+        <div class="answers">${list.map(([,v]) => `<div class="ans">${a.anon ? '' : `<div class="who">${esc(v.name)}</div>`}<p>${linkify(v[q.id])}</p></div>`).join('') || '<p class="muted small">아직 응답이 없어요.</p>'}</div>`;
     }).join('');
   } else if (a.type === 'ideas'){
     const list = sortByTime(r);
