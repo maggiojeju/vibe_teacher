@@ -92,6 +92,15 @@ th{background:var(--paper2)}
 .qitem{background:var(--card);border:1.5px solid var(--line);border-radius:14px;padding:16px 18px;margin-bottom:14px}
 .qitem .qtext{font-weight:700;font-size:18px;margin-bottom:10px}
 .opts{display:grid;gap:8px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.cchip{display:inline-flex;align-items:center;gap:6px;border:1.5px solid var(--line);background:#fff;color:var(--ink);border-radius:999px;padding:7px 14px;cursor:pointer;font-size:15px}
+.field label.cchip{display:inline-flex;font-weight:400;white-space:nowrap;margin:0;width:auto;font-size:15px}
+.field label.cchip:has(input:checked){font-weight:700}
+.field .cchip input{accent-color:var(--teal);margin:0;width:auto;padding:0;border:0}
+.cchip:has(input:checked){border-color:var(--teal);background:var(--teal-soft);font-weight:700}
+.etcin{margin-top:8px}
+.tally{display:grid;gap:6px;margin-bottom:8px}
+.tally .opt{cursor:default}
 .opt{position:relative;text-align:left;border:1.5px solid var(--line);background:#fff;border-radius:10px;padding:10px 14px;overflow:hidden}
 .opt .bar{position:absolute;left:0;top:0;bottom:0;background:var(--teal-soft);z-index:0;transition:width .4s}
 .opt span{position:relative;z-index:1}
@@ -273,10 +282,14 @@ const STEPS = [
   { id:'ice', sec:'열기 · 아이스브레이킹', title:'선생님의 경험을 들려주세요',
     body:`<p class="muted">짧게 써도 괜찮아요. 없으면 “없음”이라고 적어 주세요.</p><p class="lead" style="margin-top:8px">🙈 이 활동은 <b>이름 없이</b> 공개됩니다. 누가 썼는지 강사도 알 수 없어요.</p>`,
     act:{ type:'survey', title:'경험 나누기', anon:true, qs:[
-      {id:'made', label:'Q1. 직접 만들어 본 프로그램이나 웹앱이 있나요?', ph:'예: 구글 설문으로 만든 독서 기록장'},
-      {id:'tool', label:'Q2. 그때 사용한 도구는 무엇이었나요?', ph:'예: 구글 설문, 스크래치, ChatGPT, Gemini…'},
-      {id:'good', label:'Q3. 다른 선생님이 만든 것 중 좋았던 사례는? (링크도 좋아요)', ph:'예: 숏.한국 https://…'},
-      {id:'want', label:'Q4. 만들고 싶었던 수업 도구가 있었나요?', ph:'“이런 게 있으면 좋겠다” 싶었던 것'}
+      {id:'favai', kind:'choice', label:'Q1. 가장 애용하는 생성형 AI는 무엇인가요? (하나만)',
+        opts:['ChatGPT','Gemini','Claude','뤼튼','Microsoft Copilot','Perplexity','거의 사용하지 않음'], etc:true},
+      {id:'paidai', kind:'choice', multi:true, none:'없음', label:'Q2. 유료로 구독 중인 생성형 AI가 있나요? (여러 개 선택 가능)',
+        opts:['없음','ChatGPT (Plus·Pro)','Gemini (Google AI Pro 등)','Claude (Pro·Max)','Perplexity Pro','Microsoft Copilot Pro','뤼튼 유료'], etc:true},
+      {id:'made', label:'Q3. 직접 만들어 본 프로그램이나 웹앱이 있나요?', ph:'예: 구글 설문으로 만든 독서 기록장'},
+      {id:'tool', label:'Q4. 그때 사용한 도구는 무엇이었나요?', ph:'예: 구글 설문, 스크래치, ChatGPT, Gemini…'},
+      {id:'good', label:'Q5. 다른 선생님이 만든 것 중 좋았던 사례는? (링크도 좋아요)', ph:'예: 숏.한국 https://…'},
+      {id:'want', label:'Q6. 만들고 싶었던 수업 도구가 있었나요?', ph:'“이런 게 있으면 좋겠다” 싶었던 것'}
     ]}},
 
   { id:'goal', sec:'열기 · 오늘의 목표', title:'질문이 바뀌면 성공입니다',
@@ -648,6 +661,44 @@ function copyText(t, btn){
   }
 }
 
+/* ---------- 선택형 문항 ---------- */
+function choiceField(q, mine){
+  const cur = Array.isArray(mine[q.id]) ? mine[q.id] : []; const etc = mine[q.id + '__etc'] || '';
+  const type = q.multi ? 'checkbox' : 'radio';
+  const opt = (val, text, on) => `<label class="cchip"><input type="${type}" name="c_${q.id}" value="${esc(val)}"${on ? ' checked' : ''}>${esc(text)}</label>`;
+  return `<div class="field"><label>${esc(q.label)}</label><div class="chips">${
+    q.opts.map(o => opt(o, o, cur.includes(o))).join('')}${q.etc ? opt('__etc', '기타', !!etc) : ''}</div>${
+    q.etc ? `<input class="etcin" id="f_${q.id}__etc" placeholder="기타: 직접 입력" maxlength="100" value="${esc(etc)}"${etc ? '' : ' style="display:none"'}>` : ''}</div>`;
+}
+function wireChoices(box, a){
+  a.qs.filter(q => q.kind === 'choice').forEach(q => {
+    const inputs = [...box.querySelectorAll(`input[name="c_${q.id}"]`)];
+    const etcBox = document.getElementById('f_' + q.id + '__etc');
+    inputs.forEach(i => i.onchange = () => {
+      if (q.multi && q.none && i.checked){
+        if (i.value === q.none) inputs.forEach(x => { if (x !== i) x.checked = false; });
+        else inputs.forEach(x => { if (x.value === q.none) x.checked = false; });
+      }
+      if (etcBox){
+        const on = inputs.some(x => x.value === '__etc' && x.checked);
+        etcBox.style.display = on ? '' : 'none'; if (on && i.value === '__etc') etcBox.focus();
+      }
+    });
+  });
+}
+function choiceResult(q, list, anon){
+  const people = list.length; const counts = {}; q.opts.forEach(o => counts[o] = 0);
+  const etcs = [];
+  list.forEach(([,v]) => { (v[q.id] || []).forEach(o => { if (o in counts) counts[o]++; }); if (v[q.id + '__etc']) etcs.push(v[q.id + '__etc']); });
+  const rows = q.opts.map(o => [o, counts[o]]);
+  if (q.etc) rows.push(['기타', etcs.length]);
+  const max = Math.max(1, ...rows.map(r => r[1]));
+  return `<div class="tally">${rows.map(([o, c]) => {
+    const pct = people ? Math.round(c / people * 100) : 0;
+    return `<div class="opt"><i class="bar" style="width:${Math.round(c / max * 100)}%"></i><span>${esc(o)}</span><span class="pct">${c}명 · ${pct}%</span></div>`;
+  }).join('')}</div>${etcs.length ? `<div class="answers">${etcs.map(t => `<div class="ans"><p>기타: ${esc(t)}</p></div>`).join('')}</div>` : ''}`;
+}
+
 /* ---------- 입력 폼 ---------- */
 function renderForm(){
   const st = STEPS[viewStep]; const a = st.act; const box = document.getElementById('form');
@@ -656,18 +707,29 @@ function renderForm(){
   if (['survey','ideas','submit'].includes(a.type)){
     if (IS_HOST){ box.innerHTML = `<p class="muted small">참가자 화면에는 입력 칸이 보입니다. 응답이 아래에 실시간으로 모입니다.</p>`; return; }
     box.innerHTML = `<form id="actForm">
-      ${a.qs.map(q => `<div class="field"><label for="f_${q.id}">${esc(q.label)}</label>${
+      ${a.qs.map(q => q.kind === 'choice' ? choiceField(q, mine) : `<div class="field"><label for="f_${q.id}">${esc(q.label)}</label>${
         q.kind === 'long' || (a.type === 'survey')
           ? `<textarea id="f_${q.id}" placeholder="${esc(q.ph || '')}" maxlength="2000">${esc(mine[q.id] || '')}</textarea>`
           : `<input id="f_${q.id}" type="${q.kind === 'url' ? 'url' : 'text'}" placeholder="${esc(q.ph || '')}" value="${esc(mine[q.id] || '')}" maxlength="500">`
       }</div>`).join('')}
       <button class="btn" type="submit">${mine.t ? '다시 보내기' : '보내기'}</button><span class="saved" id="savedMsg">${mine.t ? '보냄 ✓' : ''}</span>
     </form>`;
+    wireChoices(box, a);
     document.getElementById('actForm').onsubmit = e => {
       e.preventDefault();
       const v = a.anon ? { t: Date.now() } : { name: myName, t: Date.now() };
       let any = false;
-      a.qs.forEach(q => { const val = document.getElementById('f_' + q.id).value.trim(); v[q.id] = val; if (val) any = true; });
+      a.qs.forEach(q => {
+        if (q.kind === 'choice'){
+          const sel = [...e.target.querySelectorAll(`input[name="c_${q.id}"]:checked`)].map(i => i.value);
+          const etcBox = document.getElementById('f_' + q.id + '__etc');
+          const etc = (etcBox && sel.includes('__etc')) ? etcBox.value.trim() : '';
+          const picked = sel.filter(x => x !== '__etc');
+          v[q.id] = picked.length ? picked : null; v[q.id + '__etc'] = etc || null;
+          if (picked.length || etc) any = true; return;
+        }
+        const val = document.getElementById('f_' + q.id).value.trim(); v[q.id] = val; if (val) any = true;
+      });
       if (!any) return;
       const urlQ = a.qs.find(q => q.kind === 'url');
       if (urlQ && v[urlQ.id] && !safeUrl(v[urlQ.id])){ alertMsg('링크는 https:// 로 시작하는 주소를 붙여 넣어 주세요.'); return; }
@@ -722,6 +784,10 @@ function renderResults(){
   const r = resp(st.id); const n = Object.keys(r).length;
   if (a.type === 'survey'){
     box.innerHTML = a.qs.map(q => {
+      if (q.kind === 'choice'){
+        const list = sortByTime(r).filter(([,v]) => (v[q.id] && v[q.id].length) || v[q.id + '__etc']);
+        return `<h2 style="font-size:18px">${esc(q.label)} <span class="count">${list.length}명</span></h2>${list.length ? choiceResult(q, list, a.anon) : '<p class="muted small">아직 응답이 없어요.</p>'}`;
+      }
       const list = sortByTime(r).filter(([,v]) => v[q.id]);
       return `<h2 style="font-size:18px">${esc(q.label)} <span class="count">${list.length}개</span></h2>
         <div class="answers">${list.map(([,v]) => `<div class="ans">${a.anon ? '' : `<div class="who">${esc(v.name)}</div>`}<p>${linkify(v[q.id])}</p></div>`).join('') || '<p class="muted small">아직 응답이 없어요.</p>'}</div>`;
