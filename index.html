@@ -468,17 +468,20 @@ const STEPS = [
       <li>메뉴 ‘확장 프로그램’ → ‘Apps Script’ 열기 <span class="muted small">(시트에서 열면 코드가 ‘이 시트’를 바로 찾아요)</span></li>
       <li>Gemini에 아래 프롬프트 → <b>Code.gs</b>, <b>index.html</b> 코드 받기</li>
       <li>코드 붙여넣기 (‘+’ → HTML로 index 파일 추가) → 저장</li>
-      <li>‘배포’ → ‘새 배포’ → 유형 ‘웹 앱’ → 권한 승인</li>
+      <li>‘배포’ → ‘새 배포’ → ‘유형 선택’ 옆 작은 ⚙ → ‘웹 앱’ → 실행 ‘나’, 액세스 ‘모든 사용자’ → 배포 → 권한 승인</li>
       <li>웹앱 주소로 시험 신청 → 시트 확인 → 아래에 링크 제출</li>
     </ol>
     ${promptBox('예시 프롬프트', PROMPT_CLUB)}
     <div class="tablewrap"><table>
       <tr><th>이럴 때</th><th>이렇게</th></tr>
-      <tr><td>‘확인되지 않은 앱’ 경고</td><td>내가 만든 스크립트면 ‘고급’ → ‘(프로젝트 이름)로 이동’</td></tr>
-      <tr><td>고쳤는데 반영이 안 됨</td><td>‘배포 관리’에서 새 버전으로 다시 배포</td></tr>
-      <tr><td>오류 메시지가 뜸</td><td>메시지를 그대로 복사해 Gemini에 붙여넣기</td></tr>
+      <tr><td>새 배포 창의 ‘유형 선택’이 비어 있음</td><td>‘유형 선택’ 옆 작은 ⚙ → ‘웹 앱’</td></tr>
+      <tr><td>‘확인되지 않은 앱’ 경고</td><td>개발자 이메일이 내 계정이면 ‘고급’ → ‘(프로젝트 이름)로 이동’ → 허용</td></tr>
+      <tr><td>링크를 열면 로그인을 요구함</td><td>배포 관리에서 실행 ‘나’, 액세스 ‘모든 사용자’로 (‘Google 계정이 있는 모든 사용자’ 아님)</td></tr>
+      <tr><td>“index(이)라는 이름의 HTML 파일을 찾을 수 없습니다”</td><td>‘+’ → HTML로 파일을 만들고 이름은 <b>index</b>만 입력 (index.html.html, Index 주의)</td></tr>
+      <tr><td>고쳤는데 반영이 안 됨</td><td>배포 관리 → 연필 → 버전 ‘새 버전’ → 배포 (‘새 배포’를 누르면 주소가 바뀜)</td></tr>
+      <tr><td>그 밖의 오류 메시지</td><td>메시지를 그대로 복사해 Gemini에 붙여넣기</td></tr>
     </table></div>
-    <p class="muted small">Code.gs = Google Apps Script 파일(내용은 자바스크립트) · 빨리 끝났다면: “동아리별 현재 신청 인원을 보여 주고, 정원 20명이 차면 ‘마감’으로 표시해 줘”</p>`,
+    <p class="muted small">공유할 링크는 <b>/exec</b>로 끝나는 ‘웹 앱 URL’ · Code.gs = Google Apps Script 파일(내용은 자바스크립트) · 빨리 끝났다면: “동아리별 현재 신청 인원을 보여 주고, 정원 20명이 차면 ‘마감’으로 표시해 줘”</p>`,
     act:{ type:'submit', title:'웹앱 제출', qs:[
       {id:'url', label:'배포한 웹앱 주소', kind:'url', ph:'https://script.google.com/macros/s/…/exec'},
       {id:'desc', label:'추가하거나 바꾼 기능', kind:'text', ph:'예: 정원 마감 표시를 넣었어요'}
